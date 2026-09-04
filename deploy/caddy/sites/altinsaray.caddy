@@ -1,0 +1,9 @@
+http://altinsaray.localhost {
+	handle /api/* {
+		reverse_proxy altinsaray-api:3001
+	}
+
+	handle {
+		reverse_proxy altinsaray-web:3000
+	}
+}

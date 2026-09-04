@@ -1,0 +1,16 @@
+node_modules/
+.turbo/
+.next/
+dist/
+coverage/
+
+.env
+.env.*
+!.env.example
+apps/api/.env
+apps/api/.env.*
+
+.DS_Store
+*.log
+
+.claude/settings.local.json

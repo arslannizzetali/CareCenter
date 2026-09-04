@@ -1,0 +1,9 @@
+__DOMAIN__ {
+	handle /api/* {
+		reverse_proxy __SLUG__-api:3001
+	}
+
+	handle {
+		reverse_proxy __SLUG__-web:3000
+	}
+}

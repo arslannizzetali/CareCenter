@@ -1,0 +1,9 @@
+http://yenisaray.localhost {
+	handle /api/* {
+		reverse_proxy yenisaray-api:3001
+	}
+
+	handle {
+		reverse_proxy yenisaray-web:3000
+	}
+}

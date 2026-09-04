@@ -1,0 +1,38 @@
+# Kurum başına api+web çifti. Paylaşımlı bakimevi-net ağına bağlanır
+# (deploy/docker-compose.base.yml tarafından oluşturulmuş olmalı).
+#
+# Elle çalıştırmak yerine normalde scripts/tenant-create.sh kullanılır.
+# Elle kullanım:
+#   docker compose -f deploy/docker-compose.tenant.yml \
+#     --env-file deploy/tenants/<slug>/.env \
+#     -p <slug> up -d
+
+networks:
+  bakimevi-net:
+    name: bakimevi-net
+    external: true
+
+services:
+  api:
+    image: bakimevi-api:latest
+    container_name: ${TENANT_SLUG}-api
+    restart: unless-stopped
+    env_file: tenants/${TENANT_SLUG}/.env
+    networks: [bakimevi-net]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  web:
+    image: bakimevi-web:latest
+    container_name: ${TENANT_SLUG}-web
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+    networks: [bakimevi-net]
+    depends_on:
+      api:
+        condition: service_healthy

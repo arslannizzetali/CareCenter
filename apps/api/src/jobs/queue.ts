@@ -1,0 +1,23 @@
+import Queue from "bull";
+import { env } from "../config/index.js";
+import { processDocumentRetention } from "./document-retention.job.js";
+
+export const retentionQueue = new Queue("document-retention", env.REDIS_URL);
+
+export function registerQueues(): void {
+  retentionQueue.process(async () => {
+    await processDocumentRetention();
+  });
+
+  void retentionQueue.add(
+    {},
+    {
+      repeat: {
+        cron: "0 2 * * *",
+        tz: "Europe/Istanbul"
+      },
+      removeOnComplete: true,
+      removeOnFail: false
+    }
+  );
+}

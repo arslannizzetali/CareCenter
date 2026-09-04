@@ -1,0 +1,23 @@
+{
+  "name": "bakim-merkezi",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.1.2",
+  "scripts": {
+    "dev": "corepack pnpm -r --parallel --if-present dev",
+    "build": "corepack pnpm -r --if-present build",
+    "lint": "corepack pnpm -r --if-present lint",
+    "test": "corepack pnpm -r --if-present test",
+    "typecheck": "corepack pnpm -r --if-present typecheck",
+    "generate:secrets": "tsx scripts/generate-secrets.ts",
+    "prisma": "corepack pnpm --filter @bakimevi/api prisma",
+    "db:migrate": "corepack pnpm --filter @bakimevi/api prisma migrate dev",
+    "db:generate": "corepack pnpm --filter @bakimevi/api prisma generate",
+    "db:seed": "corepack pnpm --filter @bakimevi/api prisma db seed"
+  },
+  "devDependencies": {
+    "turbo": "^2.6.1",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  }
+}

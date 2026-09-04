@@ -1,0 +1,87 @@
+# Paylaşımlı platform altyapısı — VPS'te 1 kez ayağa kaldırılır.
+# Kullanım:
+#   cp deploy/.env.platform.example deploy/.env.platform   # sonra değerleri doldur
+#   docker compose -f deploy/docker-compose.base.yml --env-file deploy/.env.platform -p bakimevi-platform up -d
+#
+# Not: postgres/redis/minio HİÇBİR PORT host'a açılmıyor — sadece bakimevi-net
+# üzerinden, aynı ağdaki tenant container'larından erişilebilir. İnternete açık
+# tek servis Caddy'dir (80/443).
+
+name: bakimevi-platform
+
+networks:
+  bakimevi-net:
+    name: bakimevi-net
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+  caddy_data:
+  caddy_config:
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: bakimevi-platform-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${PLATFORM_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${PLATFORM_POSTGRES_PASSWORD}
+      POSTGRES_DB: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks: [bakimevi-net]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PLATFORM_POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    container_name: bakimevi-platform-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${PLATFORM_REDIS_PASSWORD}"]
+    volumes:
+      - redis_data:/data
+    networks: [bakimevi-net]
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${PLATFORM_REDIS_PASSWORD}", "--no-auth-warning", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  minio:
+    image: minio/minio:latest
+    container_name: bakimevi-platform-minio
+    restart: unless-stopped
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${PLATFORM_MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${PLATFORM_MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    networks: [bakimevi-net]
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: bakimevi-platform-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile
+      - ./caddy/sites:/etc/caddy/sites
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [bakimevi-net]

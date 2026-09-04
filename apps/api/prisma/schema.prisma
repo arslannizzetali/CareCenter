@@ -1,0 +1,201 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  EMPLOYEE
+}
+
+enum CareType {
+  ELDERLY
+  DISABLED
+  BOTH
+}
+
+enum PatientStatus {
+  ACTIVE
+  DISCHARGED
+  TRANSFERRED
+}
+
+enum MobilityLevel {
+  INDEPENDENT
+  ASSISTED
+  BEDRIDDEN
+}
+
+enum UpdateType {
+  MEDICATION
+  CARE
+  OBSERVATION
+  STATUS_CHANGE
+  VITAL_SIGNS
+  INCIDENT
+}
+
+enum PatientMood {
+  GOOD
+  MODERATE
+  BAD
+}
+
+enum DocumentPriority {
+  RED
+  YELLOW
+  GREEN
+}
+
+model User {
+  id              String          @id @default(uuid())
+  email           String          @unique @db.VarChar(255)
+  passwordHash    String          @map("password_hash")
+  firstName       String          @map("first_name") @db.VarChar(50)
+  lastName        String          @map("last_name") @db.VarChar(50)
+  role            Role            @default(EMPLOYEE)
+  isActive        Boolean         @default(true) @map("is_active")
+  createdById     String?         @map("created_by_id")
+  createdBy       User?           @relation("CreatedByUser", fields: [createdById], references: [id])
+  createdUsers    User[]          @relation("CreatedByUser")
+  lastLoginAt     DateTime?       @map("last_login_at")
+  lastLoginIp     String?         @map("last_login_ip") @db.VarChar(45)
+  patients        Patient[]
+  patientUpdates  PatientUpdate[]
+  documents       Document[]
+  auditLogs       AuditLog[]
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+  deletedAt       DateTime?       @map("deleted_at")
+
+  @@index([email])
+  @@map("users")
+}
+
+model Patient {
+  id                       String          @id @default(uuid())
+  firstName                String          @map("first_name") @db.VarChar(50)
+  lastName                 String          @map("last_name") @db.VarChar(50)
+  birthDate                DateTime        @map("birth_date")
+  gender                   String          @db.VarChar(10)
+  tcNumberEncrypted        String?         @map("tc_number_encrypted")
+  careType                 CareType        @map("care_type")
+  roomNumber               String?         @map("room_number") @db.VarChar(20)
+  admissionDate            DateTime        @map("admission_date")
+  status                   PatientStatus   @default(ACTIVE)
+  diagnosis                String?         @db.Text
+  allergies                String?         @db.Text
+  currentMedications       String?         @map("current_medications") @db.Text
+  mobilityLevel            MobilityLevel   @map("mobility_level")
+  dietaryNeeds             String?         @map("dietary_needs") @db.Text
+  emergencyContactName     String          @map("emergency_contact_name") @db.VarChar(100)
+  emergencyContactPhone    String          @map("emergency_contact_phone") @db.VarChar(15)
+  emergencyContactRelation String          @map("emergency_contact_relation") @db.VarChar(50)
+  notes                    String?         @db.Text
+  createdById              String          @map("created_by_id")
+  createdBy                User            @relation(fields: [createdById], references: [id])
+  patientUpdates           PatientUpdate[]
+  documents                Document[]
+  createdAt                DateTime        @default(now()) @map("created_at")
+  updatedAt                DateTime        @updatedAt @map("updated_at")
+  deletedAt                DateTime?       @map("deleted_at")
+
+  @@index([firstName, lastName])
+  @@index([status])
+  @@index([careType])
+  @@index([roomNumber])
+  @@map("patients")
+}
+
+model PatientUpdate {
+  id                 String      @id @default(uuid())
+  patientId          String      @map("patient_id")
+  patient            Patient     @relation(fields: [patientId], references: [id])
+  employeeId         String      @map("employee_id")
+  employee           User        @relation(fields: [employeeId], references: [id])
+  updateType         UpdateType  @map("update_type")
+  content            String      @db.Text
+  medicationsGiven   Json?       @map("medications_given")
+  vitalSigns         Json?       @map("vital_signs")
+  carePerformed      String[]    @map("care_performed")
+  patientMood        PatientMood @map("patient_mood")
+  nextActionRequired String?     @map("next_action_required") @db.Text
+  isUrgent           Boolean     @default(false) @map("is_urgent")
+  createdAt          DateTime    @default(now()) @map("created_at")
+
+  @@index([patientId, createdAt(sort: Desc)])
+  @@index([employeeId])
+  @@index([isUrgent])
+  @@index([createdAt(sort: Desc)])
+  @@map("patient_updates")
+}
+
+model Document {
+  id             String           @id @default(uuid())
+  patientId      String           @map("patient_id")
+  patient        Patient          @relation(fields: [patientId], references: [id])
+  uploadedById   String           @map("uploaded_by_id")
+  uploadedBy     User             @relation(fields: [uploadedById], references: [id])
+  fileName       String           @map("file_name") @db.VarChar(255)
+  storedFileName String           @map("stored_file_name") @db.VarChar(255)
+  fileSize       BigInt           @map("file_size")
+  mimeType       String           @map("mime_type") @db.VarChar(100)
+  priority       DocumentPriority
+  encryptionKey  String           @map("encryption_key")
+  checksum       String           @db.VarChar(64)
+  isDeleted      Boolean          @default(false) @map("is_deleted")
+  deletedAt      DateTime?        @map("deleted_at")
+  deletedById    String?          @map("deleted_by_id")
+  uploadedAt     DateTime         @default(now()) @map("uploaded_at")
+
+  @@index([patientId, isDeleted])
+  @@index([uploadedById])
+  @@index([priority])
+  @@map("documents")
+}
+
+model DocumentRetentionPolicy {
+  id                String   @id @default(uuid())
+  priority          String   @unique @db.VarChar(10)
+  retentionDays     Int      @map("retention_days")
+  autoDeleteEnabled Boolean  @map("auto_delete_enabled")
+  updatedById       String   @map("updated_by_id")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("document_retention_policies")
+}
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  userId       String?  @map("user_id")
+  user         User?    @relation(fields: [userId], references: [id])
+  action       String   @db.VarChar(100)
+  resourceType String   @map("resource_type") @db.VarChar(50)
+  resourceId   String   @map("resource_id")
+  metadata     Json?
+  ipAddress    String   @map("ip_address") @db.VarChar(45)
+  userAgent    String?  @map("user_agent")
+  performedAt  DateTime @default(now()) @map("performed_at")
+
+  @@index([userId])
+  @@index([action])
+  @@index([performedAt(sort: Desc)])
+  @@map("audit_logs")
+}
+
+model DemoRequest {
+  id              String   @id @default(uuid())
+  institutionName String   @map("institution_name") @db.VarChar(150)
+  contactName     String   @map("contact_name") @db.VarChar(100)
+  phone           String   @db.VarChar(20)
+  email           String   @db.VarChar(255)
+  message         String?  @db.Text
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt(sort: Desc)])
+  @@map("demo_requests")
+}
