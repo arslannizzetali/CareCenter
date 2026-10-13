@@ -52,7 +52,7 @@ export class AuthService {
 
     if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
       await this.recordFailedLogin(email, context);
-      throw new UnauthorizedError("INVALID_CREDENTIALS", "E-posta veya şifre hatalı");
+      throw new UnauthorizedError("INVALID_CREDENTIALS", "Incorrect email or password");
     }
 
     if (!user.isActive) {
@@ -65,7 +65,7 @@ export class AuthService {
         ipAddress: context.ipAddress,
         userAgent: context.userAgent
       });
-      throw new ForbiddenError("USER_INACTIVE", "Hesabınız devre dışı. Yöneticinizle iletişime geçin.");
+      throw new ForbiddenError("USER_INACTIVE", "Your account is disabled. Please contact your administrator.");
     }
 
     await redis.del(this.failedKey(email, context.ipAddress));
@@ -97,7 +97,7 @@ export class AuthService {
     const payload = this.verifyRefreshToken(refreshToken);
     const familyRevoked = await redis.get(this.revokedFamilyKey(payload.tokenFamily));
     if (familyRevoked) {
-      throw new UnauthorizedError("TOKEN_REUSE_DETECTED", "Tüm oturumlar sonlandırıldı");
+      throw new UnauthorizedError("TOKEN_REUSE_DETECTED", "All sessions have been terminated");
     }
 
     const activeToken = await redis.get(this.refreshTokenKey(payload.jti));
@@ -112,7 +112,7 @@ export class AuthService {
         ipAddress: context.ipAddress,
         userAgent: context.userAgent
       });
-      throw new UnauthorizedError("TOKEN_REUSE_DETECTED", "Tüm oturumlar sonlandırıldı");
+      throw new UnauthorizedError("TOKEN_REUSE_DETECTED", "All sessions have been terminated");
     }
 
     await redis.del(this.refreshTokenKey(payload.jti));
@@ -123,7 +123,7 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedError("USER_INACTIVE", "Kullanıcı aktif değil");
+      throw new UnauthorizedError("USER_INACTIVE", "User is not active");
     }
 
     return this.generateTokenPair(user, payload.tokenFamily);
@@ -211,7 +211,7 @@ export class AuthService {
     }) as RefreshPayload;
 
     if (!payload.sub || !payload.jti || !payload.tokenFamily) {
-      throw new UnauthorizedError("INVALID_REFRESH_TOKEN", "Oturum yenileme bilgisi geçersiz");
+      throw new UnauthorizedError("INVALID_REFRESH_TOKEN", "Invalid refresh token");
     }
 
     return payload;
@@ -222,7 +222,7 @@ export class AuthService {
     if (banned) {
       throw new ForbiddenError(
         "TOO_MANY_ATTEMPTS",
-        "Çok fazla başarısız deneme. 15 dakika sonra tekrar deneyin."
+        "Too many failed attempts. Try again in 15 minutes."
       );
     }
   }

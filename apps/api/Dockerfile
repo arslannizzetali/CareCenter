@@ -28,8 +28,8 @@ COPY --from=build /repo/packages ./packages
 COPY --from=build /repo/apps/api ./apps/api
 WORKDIR /repo/apps/api
 EXPOSE 3001
-# tsconfig.json path-maps @bakimevi/shared-types ve @bakimevi/validation'ı workspace
-# paketlerinin src/*.ts kaynağına işaret ediyor (dev'de tsx watch pre-build gerektirmesin
-# diye). Bu yüzden tsc, rootDir'i /repo olarak hesaplıyor ve çıktı dist/server.js değil
+# tsconfig.json path-maps @bakimevi/shared-types and @bakimevi/validation to the workspace
+# packages' src/*.ts sources (so that tsx watch in dev does not require a pre-build).
+# Because of this, tsc computes rootDir as /repo and the output is not dist/server.js but
 # dist/apps/api/src/server.js oluyor.
 CMD ["node", "dist/apps/api/src/server.js"]

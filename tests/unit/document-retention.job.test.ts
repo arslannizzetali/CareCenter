@@ -30,7 +30,7 @@ describe("document retention job", () => {
     vi.clearAllMocks();
   });
 
-  it("90 günlük YELLOW politika ile 91 günlük dosyayı siler", async () => {
+  it("deletes a 91-day-old file under a 90-day YELLOW policy", async () => {
     findManyMock.mockResolvedValue([{ priority: "YELLOW", retentionDays: 90, autoDeleteEnabled: true }]);
     const { processDocumentRetention } = await import("../../apps/api/src/jobs/document-retention.job.js");
 

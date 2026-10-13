@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Varsayılan: container'ları durdurup kaldırır ama veri/secret dokunulmaz
-#             (tenant-create.sh ile aynı slug'la tekrar container ayağa
-#             kaldırılabilir, veri korunur).
-# --purge:    yukarıdakine ek olarak veritabanını, MinIO bucket+kullanıcısını,
-#             Caddy site bloğunu ve .env dosyasını KALICI olarak siler. GERİ ALINAMAZ.
+# Default: stops and removes the containers but leaves data/secrets untouched
+#             (containers can be brought up again with the same slug via tenant-create.sh,
+#             data is preserved).
+# --purge:    in addition to the above, PERMANENTLY deletes the database, MinIO bucket+user,
+#             Caddy site block and .env file. CANNOT BE UNDONE.
 #
-# Kullanım: scripts/tenant-remove.sh <slug> [--purge]
+# Usage: scripts/tenant-remove.sh <slug> [--purge]
 
 if [[ $# -lt 1 ]]; then
-  echo "Kullanım: $0 <slug> [--purge]" >&2
+  echo "Usage: $0 <slug> [--purge]" >&2
   exit 1
 fi
 
@@ -22,7 +22,7 @@ DEPLOY_DIR="$ROOT_DIR/deploy"
 TENANT_DIR="$DEPLOY_DIR/tenants/$SLUG"
 PLATFORM_ENV="$DEPLOY_DIR/.env.platform"
 
-echo "==> [$SLUG] container'lar durduruluyor ve kaldırılıyor"
+echo "==> [$SLUG] stopping and removing containers"
 if [[ -f "$TENANT_DIR/.env" ]]; then
   TENANT_SLUG="$SLUG" docker compose -f "$DEPLOY_DIR/docker-compose.tenant.yml" \
     --env-file "$TENANT_DIR/.env" -p "$SLUG" down || true
@@ -31,14 +31,14 @@ else
 fi
 
 if [[ "$PURGE" != "--purge" ]]; then
-  echo "$SLUG durduruldu (veri korunuyor). Kalıcı silmek için: $0 $SLUG --purge"
+  echo "$SLUG stopped (data preserved). To permanently delete: $0 $SLUG --purge"
   exit 0
 fi
 
-echo "!! [$SLUG] KALICI SİLME başlıyor — veritabanı, dosyalar ve secret'lar geri alınamaz şekilde silinecek."
-read -r -p "Devam etmek için '$SLUG' yaz ve Enter'a bas: " CONFIRM
+echo "!! [$SLUG] PERMANENT DELETION starting — database, files and secrets will be irreversibly deleted."
+read -r -p "Type '$SLUG' and press Enter to continue: " CONFIRM
 if [[ "$CONFIRM" != "$SLUG" ]]; then
-  echo "Onaylanmadı, iptal edildi." >&2
+  echo "Not confirmed, aborted." >&2
   exit 1
 fi
 
@@ -52,14 +52,14 @@ DB_USER="${SLUG}_user"
 BUCKET="${SLUG}-documents"
 MINIO_USER="${SLUG}-svc"
 
-echo "==> [$SLUG] Postgres veritabanı ve rolü siliniyor"
+echo "==> [$SLUG] deleting Postgres database and role"
 docker exec -i -e PGPASSWORD="$PLATFORM_POSTGRES_PASSWORD" bakimevi-platform-postgres \
   psql -v ON_ERROR_STOP=1 -U "$PLATFORM_POSTGRES_USER" -d postgres <<SQL
 DROP DATABASE IF EXISTS ${DB_NAME};
 DROP ROLE IF EXISTS ${DB_USER};
 SQL
 
-echo "==> [$SLUG] MinIO bucket ve kullanıcısı siliniyor"
+echo "==> [$SLUG] deleting MinIO bucket and user"
 docker run --rm --network bakimevi-net --entrypoint sh minio/mc -c "
   mc alias set platform http://bakimevi-platform-minio:9000 '$PLATFORM_MINIO_ROOT_USER' '$PLATFORM_MINIO_ROOT_PASSWORD' >/dev/null &&
   mc admin user remove platform ${MINIO_USER} || true &&
@@ -67,13 +67,13 @@ docker run --rm --network bakimevi-net --entrypoint sh minio/mc -c "
   mc rb --force platform/${BUCKET} || true
 "
 
-echo "==> [$SLUG] Caddy site bloğu kaldırılıyor"
+echo "==> [$SLUG] removing Caddy site block"
 rm -f "$DEPLOY_DIR/caddy/sites/${SLUG}.caddy"
 if docker ps --format '{{.Names}}' | grep -qx bakimevi-platform-caddy; then
   docker exec bakimevi-platform-caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
 fi
 
-echo "==> [$SLUG] .env ve tenant klasörü siliniyor"
+echo "==> [$SLUG] deleting .env and tenant folder"
 rm -rf "$TENANT_DIR"
 
-echo "$SLUG kalıcı olarak silindi."
+echo "$SLUG permanently deleted."

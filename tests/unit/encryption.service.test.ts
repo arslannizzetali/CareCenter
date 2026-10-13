@@ -5,7 +5,7 @@ describe("EncryptionService", () => {
   const service = new EncryptionService();
   const original = Buffer.from("hasta evraki test icerigi");
 
-  it("aynı dosyayı farklı IV ile farklı çıktıya şifreler", () => {
+  it("encrypts the same file to different output with a different IV", () => {
     const first = service.encryptFile(original);
     const second = service.encryptFile(original);
 
@@ -13,21 +13,21 @@ describe("EncryptionService", () => {
     expect(first.iv).not.toBe(second.iv);
   });
 
-  it("şifrele ve çöz işlemi orijinal dosyayı döndürür", () => {
+  it("encrypt then decrypt returns the original file", () => {
     const encrypted = service.encryptFile(original);
     const decrypted = service.decryptFile(encrypted.encrypted, encrypted.key, encrypted.iv, encrypted.authTag);
 
     expect(decrypted.equals(original)).toBe(true);
   });
 
-  it("checksum değişmiş dosyayı reddeder", () => {
+  it("rejects a file whose checksum changed", () => {
     const encrypted = service.encryptFile(original);
     const tampered = Buffer.from("degistirilmis");
 
-    expect(() => service.verifyChecksum(tampered, encrypted.checksum)).toThrow("Dosya bütünlüğü doğrulanamadı");
+    expect(() => service.verifyChecksum(tampered, encrypted.checksum)).toThrow("File integrity could not be verified");
   });
 
-  it("TC kimlik şifreleme deterministiktir", () => {
+  it("national ID encryption is deterministic", () => {
     const first = service.encryptTc("12345678901");
     const second = service.encryptTc("12345678901");
 

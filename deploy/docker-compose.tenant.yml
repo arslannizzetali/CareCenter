@@ -1,8 +1,8 @@
-# Kurum başına api+web çifti. Paylaşımlı bakimevi-net ağına bağlanır
-# (deploy/docker-compose.base.yml tarafından oluşturulmuş olmalı).
+# One api+web pair per institution. Connects to the shared bakimevi-net network
+# (must have been created by deploy/docker-compose.base.yml).
 #
-# Elle çalıştırmak yerine normalde scripts/tenant-create.sh kullanılır.
-# Elle kullanım:
+# Instead of running it by hand, scripts/tenant-create.sh is normally used.
+# Manual usage:
 #   docker compose -f deploy/docker-compose.tenant.yml \
 #     --env-file deploy/tenants/<slug>/.env \
 #     -p <slug> up -d

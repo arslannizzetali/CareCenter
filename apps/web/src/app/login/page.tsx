@@ -27,7 +27,7 @@ export default function LoginPage() {
       router.push("/dashboard");
     } catch (error) {
       const message =
-        error instanceof ApiClientError ? error.message : "Giriş yapılamadı. Lütfen bilgileri kontrol edin.";
+        error instanceof ApiClientError ? error.message : "Could not sign in. Please check your credentials.";
       toast.error(message);
     } finally {
       setIsSubmitting(false);
@@ -42,9 +42,9 @@ export default function LoginPage() {
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary text-white">
             <ShieldCheck className="h-9 w-9" />
           </div>
-          <h1 className="text-3xl font-bold text-text">BakımEvi</h1>
+          <h1 className="text-3xl font-bold text-text">CareCenter</h1>
           <p className="mt-2 text-sm text-muted">
-            {mode === "login" ? "Şirket içi hasta yönetim sistemi" : "Yeni kurum kaydı talebi"}
+            {mode === "login" ? "Internal patient management system" : "New institution registration request"}
           </p>
         </div>
 
@@ -52,7 +52,7 @@ export default function LoginPage() {
           <>
             <form onSubmit={(event) => void onSubmit(event)} className="space-y-5">
               <label className="block">
-                <span className="mb-2 block text-sm font-semibold text-text">E-posta</span>
+                <span className="mb-2 block text-sm font-semibold text-text">Email</span>
                 <input
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
@@ -64,14 +64,14 @@ export default function LoginPage() {
               </label>
 
               <label className="block">
-                <span className="mb-2 block text-sm font-semibold text-text">Şifre</span>
+                <span className="mb-2 block text-sm font-semibold text-text">Password</span>
                 <div className="relative">
                   <input
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                     type={showPassword ? "text" : "password"}
                     className="focus-ring w-full rounded-xl border border-border px-4 py-3 pr-12 text-text"
-                    placeholder="Şifreniz"
+                    placeholder="Your password"
                     required
                   />
                   <button
@@ -89,7 +89,7 @@ export default function LoginPage() {
                 disabled={isSubmitting}
                 className="w-full rounded-xl bg-primary px-4 py-3 font-semibold text-white shadow-sm transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isSubmitting ? "Giriş yapılıyor..." : "Giriş Yap"}
+                {isSubmitting ? "Signing in..." : "Sign In"}
               </button>
             </form>
 
@@ -97,7 +97,7 @@ export default function LoginPage() {
               onClick={() => setMode("demo")}
               className="mt-5 w-full text-center text-sm font-semibold text-primary hover:underline"
             >
-              Kurum musunuz? Demo Talep Edin
+              Are you an institution? Request a Demo
             </button>
           </>
         ) : (

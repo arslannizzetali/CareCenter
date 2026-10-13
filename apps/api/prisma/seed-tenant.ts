@@ -1,6 +1,6 @@
-// Yeni bir kurum için ilk admin kullanıcısını oluşturur. `prisma/seed.ts`in
-// aksine sahte hasta/demo verisi ÜRETMEZ — gerçek, ücretli kurum kurulumları
-// için kullanılır (bkz. scripts/tenant-create.sh).
+// Creates the first admin user for a new institution. Unlike `prisma/seed.ts`,
+// it does NOT generate fake patient/demo data — it is used for real, paid institution
+// setups (see scripts/tenant-create.sh).
 import bcrypt from "bcrypt";
 import { prisma } from "../src/config/database.js";
 import { storageService } from "../src/services/storage.service.js";
@@ -9,10 +9,10 @@ async function main(): Promise<void> {
   const email = process.env.TENANT_ADMIN_EMAIL;
   const password = process.env.TENANT_ADMIN_PASSWORD;
   const firstName = process.env.TENANT_ADMIN_FIRST_NAME ?? "Admin";
-  const lastName = process.env.TENANT_ADMIN_LAST_NAME ?? "Yönetici";
+  const lastName = process.env.TENANT_ADMIN_LAST_NAME ?? "Manager";
 
   if (!email || !password) {
-    throw new Error("TENANT_ADMIN_EMAIL ve TENANT_ADMIN_PASSWORD ortam değişkenleri zorunlu");
+    throw new Error("TENANT_ADMIN_EMAIL and TENANT_ADMIN_PASSWORD environment variables are required");
   }
 
   await storageService.ensureBucket();
@@ -35,12 +35,12 @@ async function main(): Promise<void> {
     data: { createdById: admin.id }
   });
 
-  console.log(`Kurum admini oluşturuldu: ${email}`);
+  console.log(`Institution admin created: ${email}`);
 }
 
 void main()
   .catch((error: unknown) => {
-    const message = error instanceof Error ? error.message : "Bilinmeyen seed hatası";
+    const message = error instanceof Error ? error.message : "Unknown seed error";
     console.error(message);
     process.exit(1);
   })

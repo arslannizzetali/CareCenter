@@ -1,8 +1,8 @@
 {
-	# Prod'a çıkarken gerçek bir e-posta ile değiştir (Let's Encrypt bildirimleri için).
+	# Replace with a real email before going to production (for Let's Encrypt notifications).
 	email admin@bakimbilgisistemi.com
 }
 
-# Her kurum kendi dosyasında: deploy/caddy/sites/<slug>.caddy
-# tenant-create.sh / tenant-remove.sh bu klasörü yönetir.
+# Each institution in its own file: deploy/caddy/sites/<slug>.caddy
+# tenant-create.sh / tenant-remove.sh manage this folder.
 import sites/*.caddy

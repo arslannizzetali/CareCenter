@@ -21,19 +21,19 @@ export default function AdminRecentUpdatesPage() {
       update.patient?.roomNumber ?? "-",
       update.updateType,
       update.summary ?? update.content.slice(0, 80),
-      update.isUrgent ? "ACİL" : "-"
+      update.isUrgent ? "URGENT" : "-"
     ]) ?? [];
 
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-4">
-        <h2 className="text-xl font-bold text-text">Tüm Çalışan Güncellemeleri</h2>
+        <h2 className="text-xl font-bold text-text">All Staff Updates</h2>
         <label className="flex items-center gap-2 font-semibold text-danger">
           <input type="checkbox" checked={urgentOnly} onChange={(event) => setUrgentOnly(event.target.checked)} />
           Sadece aciller
         </label>
       </div>
-      <SimpleTable headers={["Tarih/Saat", "Çalışan", "Hasta", "Oda", "Tür", "Özet", "Acil?"]} rows={rows} />
+      <SimpleTable headers={["Date/Time", "Staff", "Patient", "Room", "Type", "Summary", "Urgent?"]} rows={rows} />
     </div>
   );
 }

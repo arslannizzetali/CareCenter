@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Yeni bir kurum kurulumu oluşturur: ayrı Postgres DB+rol, ayrı MinIO bucket+kısıtlı
-# kullanıcı, ayrı Redis DB index'i, ayrı .env, Caddy subdomain bloğu, ve api+web
-# container çifti. Önce deploy/docker-compose.base.yml'nin ayakta olması gerekir.
+# Creates a new institution setup: separate Postgres DB+role, separate MinIO bucket+restricted
+# user, separate Redis DB index, separate .env, Caddy subdomain block, and api+web
+# container pair. deploy/docker-compose.base.yml must be up first.
 #
-# Kullanım:
-#   scripts/tenant-create.sh <slug> "<Kurum Adı>" <domain> [admin-email]
+# Usage:
+#   scripts/tenant-create.sh <slug> "<Institution Name>" <domain> [admin-email]
 #
-# Örnekler:
-#   scripts/tenant-create.sh altinsaray "Altınsaray Bakım Merkezi" altinsaray.bakimbilgisistemi.com
-#   scripts/tenant-create.sh altinsaray "Altınsaray Bakım Merkezi" http://altinsaray.localhost   # local test
+# Examples:
+#   scripts/tenant-create.sh altinsaray "Altinsaray Care Center" altinsaray.bakimbilgisistemi.com
+#   scripts/tenant-create.sh altinsaray "Altinsaray Care Center" http://altinsaray.localhost   # local test
 
 if [[ $# -lt 3 ]]; then
-  echo "Kullanım: $0 <slug> \"<Kurum Adı>\" <domain> [admin-email]" >&2
+  echo "Usage: $0 <slug> \"<Institution Name>\" <domain> [admin-email]" >&2
   exit 1
 fi
 
@@ -23,13 +23,13 @@ DOMAIN="$3"
 ADMIN_EMAIL="${4:-admin@${SLUG}.local}"
 
 if [[ ! "$SLUG" =~ ^[a-z0-9][a-z0-9-]{1,30}$ ]]; then
-  echo "HATA: slug sadece küçük harf, rakam ve tire içermeli, örn: altinsaray" >&2
+  echo "ERROR: slug must contain only lowercase letters, digits and hyphens, e.g. altinsaray" >&2
   exit 1
 fi
 
 for cmd in docker openssl; do
   if ! command -v "$cmd" >/dev/null 2>&1; then
-    echo "HATA: '$cmd' bulunamadı, PATH'e ekli olmalı." >&2
+    echo "ERROR: '$cmd' not found, it must be on PATH." >&2
     exit 1
   fi
 done
@@ -40,12 +40,12 @@ TENANT_DIR="$DEPLOY_DIR/tenants/$SLUG"
 PLATFORM_ENV="$DEPLOY_DIR/.env.platform"
 
 if [[ -d "$TENANT_DIR" ]]; then
-  echo "HATA: $SLUG için kurulum zaten var ($TENANT_DIR). Kaldırmak için tenant-remove.sh kullan." >&2
+  echo "ERROR: a setup for $SLUG already exists ($TENANT_DIR). Use tenant-remove.sh to remove it." >&2
   exit 1
 fi
 
 if [[ ! -f "$PLATFORM_ENV" ]]; then
-  echo "HATA: $PLATFORM_ENV yok. Önce 'cp deploy/.env.platform.example deploy/.env.platform' yapıp doldur." >&2
+  echo "ERROR: $PLATFORM_ENV is missing. First run 'cp deploy/.env.platform.example deploy/.env.platform' and fill it in." >&2
   exit 1
 fi
 
@@ -56,17 +56,17 @@ set +a
 
 for var in PLATFORM_POSTGRES_USER PLATFORM_POSTGRES_PASSWORD PLATFORM_REDIS_PASSWORD PLATFORM_MINIO_ROOT_USER PLATFORM_MINIO_ROOT_PASSWORD; do
   if [[ -z "${!var:-}" ]]; then
-    echo "HATA: $PLATFORM_ENV içinde $var boş." >&2
+    echo "ERROR: $var is empty in $PLATFORM_ENV." >&2
     exit 1
   fi
 done
 
 if ! docker ps --format '{{.Names}}' | grep -qx bakimevi-platform-postgres; then
-  echo "HATA: bakimevi-platform-postgres çalışmıyor. Önce deploy/docker-compose.base.yml'yi ayağa kaldır." >&2
+  echo "ERROR: bakimevi-platform-postgres is not running. Bring up deploy/docker-compose.base.yml first." >&2
   exit 1
 fi
 
-echo "==> [$SLUG] secret'lar üretiliyor"
+echo "==> [$SLUG] generating secrets"
 JWT_SECRET=$(openssl rand -hex 32)
 JWT_REFRESH_SECRET=$(openssl rand -hex 32)
 MASTER_ENCRYPTION_KEY=$(openssl rand -hex 32)
@@ -79,7 +79,7 @@ DB_USER="${SLUG}_user"
 BUCKET="${SLUG}-documents"
 MINIO_USER="${SLUG}-svc"
 
-echo "==> [$SLUG] boşta olan Redis DB index aranıyor"
+echo "==> [$SLUG] searching for a free Redis DB index"
 USED_INDEXES=""
 if compgen -G "$DEPLOY_DIR/tenants/*/.env" > /dev/null; then
   USED_INDEXES=$(grep -h "^REDIS_URL=" "$DEPLOY_DIR"/tenants/*/.env 2>/dev/null | sed -E 's#.*/([0-9]+)$#\1#')
@@ -92,12 +92,12 @@ for i in $(seq 1 15); do
   fi
 done
 if [[ -z "$REDIS_INDEX" ]]; then
-  echo "HATA: kullanılabilir Redis DB index kalmadı (paylaşımlı Redis'te en fazla 15 kurum barınabilir)." >&2
+  echo "ERROR: no available Redis DB index left (a shared Redis can host at most 15 institutions)." >&2
   exit 1
 fi
 echo "    Redis DB index: $REDIS_INDEX"
 
-echo "==> [$SLUG] Postgres veritabanı ve rolü oluşturuluyor"
+echo "==> [$SLUG] creating Postgres database and role"
 docker exec -i -e PGPASSWORD="$PLATFORM_POSTGRES_PASSWORD" bakimevi-platform-postgres \
   psql -v ON_ERROR_STOP=1 -U "$PLATFORM_POSTGRES_USER" -d postgres <<SQL
 CREATE DATABASE ${DB_NAME};
@@ -105,7 +105,7 @@ CREATE ROLE ${DB_USER} LOGIN PASSWORD '${DB_PASSWORD}';
 ALTER DATABASE ${DB_NAME} OWNER TO ${DB_USER};
 SQL
 
-echo "==> [$SLUG] MinIO bucket ve bucket'a kısıtlı erişim kullanıcısı oluşturuluyor"
+echo "==> [$SLUG] creating MinIO bucket and a user with restricted access to it"
 POLICY_FILE=$(mktemp)
 trap 'rm -f "$POLICY_FILE"' EXIT
 cat > "$POLICY_FILE" <<JSON
@@ -131,7 +131,7 @@ docker run --rm --network bakimevi-net \
     mc admin policy attach platform ${SLUG}-policy --user ${MINIO_USER}
   "
 
-echo "==> [$SLUG] .env yazılıyor"
+echo "==> [$SLUG] writing .env"
 mkdir -p "$TENANT_DIR"
 cat > "$TENANT_DIR/.env" <<ENV
 NODE_ENV=production
@@ -170,26 +170,26 @@ NOTIFY_EMAIL=${NOTIFY_EMAIL:-arslannizzet10@gmail.com}
 ENV
 chmod 600 "$TENANT_DIR/.env"
 
-echo "==> [$SLUG] veritabanı şeması uygulanıyor (prisma migrate deploy)"
+echo "==> [$SLUG] applying database schema (prisma migrate deploy)"
 docker run --rm --network bakimevi-net --env-file "$TENANT_DIR/.env" \
   --entrypoint npx bakimevi-api:latest prisma migrate deploy
 
-echo "==> [$SLUG] kurum admini oluşturuluyor"
+echo "==> [$SLUG] creating institution admin"
 docker run --rm --network bakimevi-net --env-file "$TENANT_DIR/.env" \
   -e TENANT_ADMIN_EMAIL="$ADMIN_EMAIL" \
   -e TENANT_ADMIN_PASSWORD="$ADMIN_PASSWORD" \
   --entrypoint npx bakimevi-api:latest tsx prisma/seed-tenant.ts
 
-echo "==> [$SLUG] Caddy site bloğu ekleniyor"
+echo "==> [$SLUG] adding Caddy site block"
 sed -e "s#__DOMAIN__#${DOMAIN}#g" -e "s#__SLUG__#${SLUG}#g" \
   "$DEPLOY_DIR/caddy/site.caddy.template" > "$DEPLOY_DIR/caddy/sites/${SLUG}.caddy"
 if docker ps --format '{{.Names}}' | grep -qx bakimevi-platform-caddy; then
   docker exec bakimevi-platform-caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
 else
-  echo "UYARI: bakimevi-platform-caddy çalışmıyor, site bloğu yazıldı ama reload edilemedi."
+  echo "WARNING: bakimevi-platform-caddy is not running; the site block was written but could not be reloaded."
 fi
 
-echo "==> [$SLUG] container'lar başlatılıyor"
+echo "==> [$SLUG] starting containers"
 TENANT_SLUG="$SLUG" docker compose -f "$DEPLOY_DIR/docker-compose.tenant.yml" \
   --env-file "$TENANT_DIR/.env" \
   -p "$SLUG" \
@@ -202,10 +202,10 @@ $SLUG ($INSTITUTION_NAME) kuruldu.
 
   Adres:          $DOMAIN
   Admin e-posta:  $ADMIN_EMAIL
-  Admin şifre:    $ADMIN_PASSWORD   (şimdi kaydet, tekrar gösterilmeyecek)
+  Admin password: $ADMIN_PASSWORD   (save it now, it won't be shown again)
 
-  .env dosyası:   $TENANT_DIR/.env  (chmod 600)
-  Askıya almak:   scripts/tenant-suspend.sh $SLUG
-  Kalıcı silmek:  scripts/tenant-remove.sh $SLUG --purge
+  .env file:      $TENANT_DIR/.env  (chmod 600)
+  Suspend:        scripts/tenant-suspend.sh $SLUG
+  Permanent delete: scripts/tenant-remove.sh $SLUG --purge
 ==================================================
 SUMMARY

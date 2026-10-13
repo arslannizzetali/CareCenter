@@ -44,4 +44,4 @@ fs.writeFileSync(envPath, envContents, { encoding: "utf8", mode: 0o600 });
 if (fs.existsSync(path.dirname(apiEnvPath))) {
   fs.writeFileSync(apiEnvPath, envContents, { encoding: "utf8", mode: 0o600 });
 }
-console.log(".env dosyalarına JWT_SECRET, JWT_REFRESH_SECRET ve MASTER_ENCRYPTION_KEY yazıldı.");
+console.log("Wrote JWT_SECRET, JWT_REFRESH_SECRET and MASTER_ENCRYPTION_KEY to the .env files.");

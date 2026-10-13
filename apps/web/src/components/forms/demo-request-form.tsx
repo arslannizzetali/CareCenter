@@ -22,10 +22,10 @@ export function DemoRequestForm({ onDone }: { onDone: () => void }) {
         ...(message ? { message } : {})
       }),
     onSuccess: () => {
-      toast.success("Talebiniz alındı, en kısa sürede size ulaşacağız.");
+      toast.success("Your request has been received, we'll get back to you shortly.");
       onDone();
     },
-    onError: () => toast.error("Talep gönderilemedi. Lütfen bilgileri kontrol edip tekrar deneyin.")
+    onError: () => toast.error("Could not send the request. Please check your details and try again.")
   });
 
   return (
@@ -36,15 +36,15 @@ export function DemoRequestForm({ onDone }: { onDone: () => void }) {
       }}
       className="space-y-4"
     >
-      <p className="text-sm text-muted">Kurum bilgilerinizi bırakın, size dönüş yapalım.</p>
+      <p className="text-sm text-muted">Leave your institution details and we'll reach out to you.</p>
 
-      <Field label="Kurum Adı" value={institutionName} onChange={setInstitutionName} placeholder="Örn. Çamlıca Bakım Merkezi" />
-      <Field label="Yetkili Adı" value={contactName} onChange={setContactName} placeholder="Ad Soyad" />
-      <Field label="Telefon" value={phone} onChange={setPhone} placeholder="05XXXXXXXXX" type="tel" />
-      <Field label="E-posta" value={email} onChange={setEmail} placeholder="kurum@ornek.com" type="email" />
+      <Field label="Institution Name" value={institutionName} onChange={setInstitutionName} placeholder="e.g. Maplewood Care Center" />
+      <Field label="Contact Name" value={contactName} onChange={setContactName} placeholder="Full Name" />
+      <Field label="Phone" value={phone} onChange={setPhone} placeholder="+1 555 123 4567" type="tel" />
+      <Field label="Email" value={email} onChange={setEmail} placeholder="org@example.com" type="email" />
 
       <label className="block">
-        <span className="mb-2 block text-sm font-semibold text-text">Mesaj (opsiyonel)</span>
+        <span className="mb-2 block text-sm font-semibold text-text">Message (optional)</span>
         <textarea
           value={message}
           onChange={(event) => setMessage(event.target.value)}
@@ -59,14 +59,14 @@ export function DemoRequestForm({ onDone }: { onDone: () => void }) {
           onClick={onDone}
           className="flex-1 rounded-xl border border-border px-4 py-3 font-semibold text-text hover:bg-surface"
         >
-          Vazgeç
+          Cancel
         </button>
         <button
           type="submit"
           disabled={mutation.isPending}
           className="flex-1 rounded-xl bg-primary px-4 py-3 font-semibold text-white shadow-sm transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {mutation.isPending ? "Gönderiliyor..." : "Talebi Gönder"}
+          {mutation.isPending ? "Sending..." : "Send Request"}
         </button>
       </div>
     </form>

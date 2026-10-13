@@ -1,19 +1,19 @@
 #!/bin/bash
 # =============================================================
-# BakımPRO — Codex Agent Kurulum Komutu Referans Dosyası
-# Bu dosyayı çalıştırarak proje yapısını oluşturabilirsiniz
+# CareCenter — Codex Agent Setup Command Reference File
+# Run this file to create the project structure
 # =============================================================
 
-echo "🏗️  BakımPRO proje yapısı oluşturuluyor..."
+echo "🏗️  Creating CareCenter project structure..."
 
 # ─────────────────────────────────────────────
-# 1. PROJE KÖK DİZİNİ
+# 1. PROJECT ROOT DIRECTORY
 # ─────────────────────────────────────────────
 mkdir -p bakim-merkezi
 cd bakim-merkezi
 
 # ─────────────────────────────────────────────
-# 2. TÜM DİZİN YAPISI
+# 2. FULL DIRECTORY STRUCTURE
 # ─────────────────────────────────────────────
 mkdir -p \
   apps/web/src/{app,components,lib,hooks,types} \
@@ -25,42 +25,42 @@ mkdir -p \
   docs/{api,architecture,database} \
   scripts
 
-echo "✅ Dizin yapısı oluşturuldu"
+echo "✅ Directory structure created"
 
 # ─────────────────────────────────────────────
-# 3. AGENTS.md DOSYALARINI OLUŞTUR
+# 3. CREATE AGENTS.md FILES
 # ─────────────────────────────────────────────
 
-# Root AGENTS.md (System Agent) — ana koordinatör
+# Root AGENTS.md (System Agent) — main coordinator
 cat > AGENTS.md << 'SYSTEM_AGENT_EOF'
-# Buraya AGENTS.md içeriğini yapıştır (System Agent)
+# Paste the AGENTS.md content here (System Agent)
 SYSTEM_AGENT_EOF
 
 # Security Agent
 cat > security/AGENTS.md << 'SECURITY_AGENT_EOF'
-# Buraya security/AGENTS.md içeriğini yapıştır
+# Paste the security/AGENTS.md content here
 SECURITY_AGENT_EOF
 
 # UI Agent
 mkdir -p apps/web
 cat > apps/web/AGENTS.md << 'UI_AGENT_EOF'
-# Buraya apps/web/AGENTS.md içeriğini yapıştır
+# Paste the apps/web/AGENTS.md content here
 UI_AGENT_EOF
 
 # Test Agent
 cat > tests/AGENTS.md << 'TEST_AGENT_EOF'
-# Buraya tests/AGENTS.md içeriğini yapıştır
+# Paste the tests/AGENTS.md content here
 TEST_AGENT_EOF
 
 # Researcher Agent
 cat > research/AGENTS.md << 'RESEARCH_AGENT_EOF'
-# Buraya research/AGENTS.md içeriğini yapıştır
+# Paste the research/AGENTS.md content here
 RESEARCH_AGENT_EOF
 
-echo "✅ AGENTS.md dosyaları oluşturuldu"
+echo "✅ AGENTS.md files created"
 
 # ─────────────────────────────────────────────
-# 4. PROJE BAŞLANGIÇ DOSYALARI
+# 4. PROJECT STARTER FILES
 # ─────────────────────────────────────────────
 
 # pnpm workspace
@@ -134,7 +134,7 @@ API_URL="http://localhost:3001"
 SENTRY_DSN=""
 EOF
 
-echo "✅ Temel konfigürasyon dosyaları oluşturuldu"
+echo "✅ Base configuration files created"
 
 # ─────────────────────────────────────────────
 # 5. DOCKER COMPOSE
@@ -170,7 +170,7 @@ services:
     ports:
       - "5433:5432"
     tmpfs:
-      - /var/lib/postgresql/data  # Test DB RAM'de çalışsın (hız için)
+      - /var/lib/postgresql/data  # Run the test DB in RAM (for speed)
 
   redis:
     image: redis:7-alpine
@@ -210,7 +210,7 @@ volumes:
   minio_data:
 EOF
 
-echo "✅ Docker Compose oluşturuldu"
+echo "✅ Docker Compose created"
 
 # ─────────────────────────────────────────────
 # 6. TURBO (MONOREPO BUILD TOOL)
@@ -246,7 +246,7 @@ cat > turbo.json << 'EOF'
 }
 EOF
 
-echo "✅ Turbo konfigürasyonu oluşturuldu"
+echo "✅ Turbo configuration created"
 
 # ─────────────────────────────────────────────
 # 7. ROOT PACKAGE.JSON
@@ -291,16 +291,16 @@ cat > package.json << 'EOF'
 }
 EOF
 
-echo "✅ Root package.json oluşturuldu"
+echo "✅ Root package.json created"
 
 echo ""
 echo "════════════════════════════════════════════════"
-echo "  BakımPRO kurulum tamamlandı!"
+echo "  CareCenter setup complete!"
 echo "════════════════════════════════════════════════"
 echo ""
-echo "Sonraki adımlar:"
+echo "Next steps:"
 echo "  1. cp .env.example .env"
-echo "  2. .env dosyasını düzenle"
+echo "  2. Edit the .env file"
 echo "  3. pnpm install"
 echo "  4. pnpm docker:up"
 echo "  5. pnpm db:migrate"

@@ -6,27 +6,110 @@ import { encryptionService } from "../src/services/encryption.service.js";
 import { storageService } from "../src/services/storage.service.js";
 
 const users = [
-  { email: "admin@bakimevi.com", password: "Admin123!", role: "ADMIN", firstName: "Admin", lastName: "Yönetici" },
+  { email: "admin@bakimevi.com", password: "Admin123!", role: "ADMIN", firstName: "Admin", lastName: "Manager" },
   { email: "ahmet@bakimevi.com", password: "Calisan123!", role: "EMPLOYEE", firstName: "Ahmet", lastName: "Demir" },
   { email: "mehmet@bakimevi.com", password: "Calisan123!", role: "EMPLOYEE", firstName: "Mehmet", lastName: "Kaya" },
   { email: "fatma@bakimevi.com", password: "Calisan123!", role: "EMPLOYEE", firstName: "Fatma", lastName: "Şahin" }
 ] satisfies Array<{ email: string; password: string; role: Role; firstName: string; lastName: string }>;
 
-const patientSeed = [
-  ["Ahmet", "Yılmaz", "1952-04-12", "MALE", "ELDERLY", "12A", "ACTIVE", "ASSISTED"],
-  ["Fatma", "Sarı", "1948-09-03", "FEMALE", "ELDERLY", "7B", "ACTIVE", "BEDRIDDEN"],
-  ["Hasan", "Öztürk", "1955-01-22", "MALE", "ELDERLY", "3C", "ACTIVE", "INDEPENDENT"],
-  ["Emine", "Çelik", "1944-07-18", "FEMALE", "ELDERLY", "14A", "DISCHARGED", "ASSISTED"],
-  ["Murat", "Aksoy", "1983-03-05", "MALE", "DISABLED", "9D", "ACTIVE", "ASSISTED"],
-  ["Zeynep", "Aydın", "1991-11-27", "FEMALE", "DISABLED", "10B", "ACTIVE", "INDEPENDENT"],
-  ["Kemal", "Kurt", "1962-02-13", "MALE", "BOTH", "2A", "TRANSFERRED", "BEDRIDDEN"],
-  ["Ayşe", "Koç", "1959-12-09", "FEMALE", "BOTH", "8C", "ACTIVE", "ASSISTED"]
-] as const;
-
 const updateTypes: UpdateType[] = ["MEDICATION", "CARE", "OBSERVATION", "VITAL_SIGNS", "INCIDENT"];
-const priorities: DocumentPriority[] = ["RED", "YELLOW", "YELLOW", "GREEN", "GREEN"];
+
+const documentTypeSeed = [
+  "Patient Health Report",
+  "Medical Board Report",
+  "ID Copy",
+  "Guardianship / Power of Attorney",
+  "Proof of Residence",
+  "Income Statement"
+];
+
+// --- Test data generator: enough variety to try out filters and printing ---
+
+const firstNamesMale = ["Ahmet", "Mehmet", "Mustafa", "Hüseyin", "Hasan", "İbrahim", "Ali", "Murat", "Kemal", "Osman", "Yusuf", "Ramazan", "Kadir", "Ercan", "Serkan", "Bülent"];
+const firstNamesFemale = ["Fatma", "Ayşe", "Emine", "Hatice", "Zeynep", "Elif", "Meryem", "Şerife", "Sultan", "Havva", "Melek", "Nurten", "Sevim", "Gülşen", "Döndü", "Fadime"];
+const lastNames = ["Yılmaz", "Kaya", "Demir", "Şahin", "Çelik", "Yıldız", "Yıldırım", "Öztürk", "Aydın", "Özdemir", "Arslan", "Doğan", "Kılıç", "Aslan", "Çetin", "Kara", "Koç", "Kurt", "Özkan", "Şimşek", "Aksoy", "Polat", "Erdoğan", "Korkmaz"];
+
+type SeedPatient = {
+  firstName: string;
+  lastName: string;
+  birthDate: string;
+  gender: "MALE" | "FEMALE";
+  careType: CareType;
+  disabilityType: "PHYSICAL" | "MENTAL" | "BOTH" | null;
+  roomNumber: string;
+  status: PatientStatus;
+  mobilityLevel: MobilityLevel;
+};
+
+// Deterministic PRNG (same data on every seed run).
+let rngState = 987654321;
+function rnd(): number {
+  rngState = (rngState * 1664525 + 1013904223) % 4294967296;
+  return rngState / 4294967296;
+}
+function pick<T>(list: readonly T[]): T {
+  return list[Math.floor(rnd() * list.length)] as T;
+}
+function pickN<T>(list: readonly T[], n: number): T[] {
+  const copy = [...list];
+  const out: T[] = [];
+  for (let i = 0; i < n && copy.length > 0; i += 1) {
+    out.push(copy.splice(Math.floor(rnd() * copy.length), 1)[0] as T);
+  }
+  return out;
+}
+
+function buildPatientSeed(count: number): SeedPatient[] {
+  const patients: SeedPatient[] = [];
+  const currentYear = new Date().getFullYear();
+  for (let i = 0; i < count; i += 1) {
+    const gender: "MALE" | "FEMALE" = rnd() < 0.5 ? "MALE" : "FEMALE";
+    // Ages 25-95; distributed so roughly half are 65+.
+    const age = rnd() < 0.5 ? 25 + Math.floor(rnd() * 40) : 65 + Math.floor(rnd() * 30);
+    const birthYear = currentYear - age;
+    const month = String(1 + Math.floor(rnd() * 12)).padStart(2, "0");
+    const day = String(1 + Math.floor(rnd() * 28)).padStart(2, "0");
+    const careType = pick<CareType>(["ELDERLY", "DISABLED", "BOTH"]);
+    const disabilityType =
+      careType === "ELDERLY" ? null : pick(["PHYSICAL", "MENTAL", "BOTH"] as const);
+    const status = pick<PatientStatus>(["ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "DISCHARGED", "TRANSFERRED"]);
+    patients.push({
+      firstName: gender === "MALE" ? pick(firstNamesMale) : pick(firstNamesFemale),
+      lastName: pick(lastNames),
+      birthDate: `${birthYear}-${month}-${day}`,
+      gender,
+      careType,
+      disabilityType,
+      roomNumber: `${1 + Math.floor(rnd() * 40)}${pick(["A", "B", "C", "D"])}`,
+      status,
+      mobilityLevel: pick<MobilityLevel>(["INDEPENDENT", "ASSISTED", "ASSISTED", "BEDRIDDEN"])
+    });
+  }
+  return patients;
+}
+
+const patientSeed = buildPatientSeed(45);
+
+// Document expiry distribution (days): red / yellow / green / no-expiry / expired.
+const expiryPool: Array<number | null> = [10, 20, 28, 45, 60, 80, 120, 200, 400, null, null, -5, -30];
+const documentPriorities: DocumentPriority[] = ["RED", "YELLOW", "GREEN"];
+
+function daysFromNow(days: number): Date {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  return date;
+}
 
 async function main(): Promise<void> {
+  // Safety guard: the seed creates accounts with well-known default passwords
+  // (e.g. "Admin123!") and demo patient data. It must never run against production.
+  if (process.env.NODE_ENV === "production" && process.env.ALLOW_PROD_SEED !== "true") {
+    throw new Error(
+      "The seed cannot be run in production (it creates demo accounts with default passwords). " +
+        "If you really want to, set ALLOW_PROD_SEED=true."
+    );
+  }
+
   const createdUsers = [];
   for (const user of users) {
     createdUsers.push(
@@ -48,7 +131,7 @@ async function main(): Promise<void> {
   const admin = createdUsers.find((user) => user.role === "ADMIN");
   const employees = createdUsers.filter((user) => user.role === "EMPLOYEE");
   if (!admin) {
-    throw new Error("Admin seed kullanıcısı oluşturulamadı");
+    throw new Error("Could not create the admin seed user");
   }
 
   await prisma.user.update({
@@ -64,28 +147,41 @@ async function main(): Promise<void> {
 
   await storageService.ensureBucket();
 
+  const documentTypes = [];
+  for (const [order, name] of documentTypeSeed.entries()) {
+    documentTypes.push(
+      await prisma.documentType.upsert({
+        where: { name },
+        update: { sortOrder: order, isSystem: true, isActive: true },
+        create: { name, sortOrder: order, isSystem: true }
+      })
+    );
+  }
+
   for (const [index, seed] of patientSeed.entries()) {
-    const [firstName, lastName, birthDate, gender, careType, roomNumber, status, mobilityLevel] = seed;
+    const { firstName, lastName, birthDate, gender, careType, disabilityType, roomNumber, status, mobilityLevel } = seed;
+    const tcSuffix = String(index + 1).padStart(4, "0");
     const patient = await prisma.patient.create({
       data: {
         firstName,
         lastName,
         birthDate: new Date(birthDate),
         gender,
-        tcNumberEncrypted: encryptionService.encryptTc(`1000000000${index + 1}`),
-        careType: careType as CareType,
+        tcNumberEncrypted: encryptionService.encryptTc(`1000000${tcSuffix}`),
+        careType,
+        disabilityType,
         roomNumber,
-        admissionDate: daysAgo(350 - index * 13),
-        status: status as PatientStatus,
-        diagnosis: "Hipertansiyon ve yaşa bağlı takip gereksinimi",
+        admissionDate: daysAgo(700 - index * 12),
+        status,
+        diagnosis: "Hypertension and age-related monitoring needs",
         allergies: "Penisilin, Aspirin",
         currentMedications: "Metformin 500mg, Lisinopril 10mg",
-        mobilityLevel: mobilityLevel as MobilityLevel,
+        mobilityLevel,
         dietaryNeeds: "Az tuzlu beslenme",
-        emergencyContactName: `${lastName} Yakını`,
+        emergencyContactName: `${lastName} Relative`,
         emergencyContactPhone: "05321234567",
         emergencyContactRelation: "Aile",
-        notes: "Düzenli takip edilmeli",
+        notes: "Needs regular monitoring",
         createdById: admin.id
       }
     });
@@ -93,14 +189,14 @@ async function main(): Promise<void> {
     for (let updateIndex = 0; updateIndex < 4; updateIndex += 1) {
       const employee = employees[(index + updateIndex) % employees.length];
       if (!employee) {
-        throw new Error("Çalışan seed verisi eksik");
+        throw new Error("Staff seed data is missing");
       }
       const updateType = updateTypes[(index + updateIndex) % updateTypes.length] ?? "OBSERVATION";
       const updateData: Prisma.PatientUpdateUncheckedCreateInput = {
         patientId: patient.id,
         employeeId: employee.id,
         updateType,
-        content: `${firstName} ${lastName} için ${updateType} kaydı girildi. Genel durum takip edildi.`,
+        content: `A ${updateType} record was entered for ${firstName} ${lastName}. General condition monitored.`,
         ...(updateType === "MEDICATION"
           ? {
               medicationsGiven: [
@@ -118,9 +214,9 @@ async function main(): Promise<void> {
               } satisfies Prisma.InputJsonValue
             }
           : {}),
-        carePerformed: updateType === "CARE" ? ["Banyo yardımı", "Beslenme yardımı"] : [],
+        carePerformed: updateType === "CARE" ? ["Bathing assistance", "Feeding assistance"] : [],
         patientMood: updateIndex % 3 === 0 ? "GOOD" : updateIndex % 3 === 1 ? "MODERATE" : "BAD",
-        ...(updateIndex === 2 ? { nextActionRequired: "Doktor değerlendirmesi planlandı" } : {}),
+        ...(updateIndex === 2 ? { nextActionRequired: "Doctor evaluation scheduled" } : {}),
         isUrgent: updateIndex === 3 && index % 2 === 0,
         createdAt: daysAgo(updateIndex + (index % 7))
       };
@@ -129,27 +225,33 @@ async function main(): Promise<void> {
       });
     }
 
-    for (const [documentIndex, priority] of priorities.entries()) {
+    // Give each patient a random subset of document types (2-6) → leave gaps for the "missing document" filter.
+    const typeCount = 2 + Math.floor(rnd() * 5);
+    const assignedTypes = pickN(documentTypes, Math.min(typeCount, documentTypes.length));
+    for (const [documentIndex, docType] of assignedTypes.entries()) {
       const employee = employees[(index + documentIndex) % employees.length];
       if (!employee) {
-        throw new Error("Çalışan seed verisi eksik");
+        throw new Error("Staff seed data is missing");
       }
       const file = documentIndex % 2 === 0 ? dummyPdf(`${firstName} ${lastName}`) : dummyJpeg();
       const encrypted = encryptionService.encryptFile(file.buffer);
       const storedFileName = `${cryptoRandomName()}.${file.ext}`;
       await storageService.uploadFile(storedFileName, encrypted.encrypted, "application/octet-stream");
+      const expiryOffset = pick(expiryPool);
       await prisma.document.create({
         data: {
           patientId: patient.id,
           uploadedById: employee.id,
-          fileName: `${firstName.toLowerCase()}-${documentIndex + 1}.${file.ext}`,
+          documentTypeId: docType.id,
+          fileName: `${firstName.toLowerCase()}-${docType.name.split(" ")[0]?.toLowerCase() ?? "evrak"}.${file.ext}`,
           storedFileName,
           fileSize: BigInt(file.buffer.length),
           mimeType: file.mimeType,
-          priority,
+          priority: pick(documentPriorities),
+          expiresAt: expiryOffset === null ? null : daysFromNow(expiryOffset),
           encryptionKey: encryptionService.packDocumentKey(encrypted.key, encrypted.iv, encrypted.authTag),
           checksum: encrypted.checksum,
-          uploadedAt: daysAgo(documentIndex * 10)
+          uploadedAt: daysAgo(10 + documentIndex * 5)
         }
       });
     }
@@ -166,7 +268,7 @@ async function main(): Promise<void> {
     create: { priority: "GREEN", retentionDays: 30, autoDeleteEnabled: true, updatedById: admin.id }
   });
 
-  console.log("Seed verisi oluşturuldu.");
+  console.log("Seed data created.");
 }
 
 function daysAgo(days: number): Date {
@@ -202,7 +304,7 @@ function cryptoRandomName(): string {
 
 void main()
   .catch((error: unknown) => {
-    const message = error instanceof Error ? error.message : "Bilinmeyen seed hatası";
+    const message = error instanceof Error ? error.message : "Unknown seed error";
     console.error(message);
     process.exit(1);
   })

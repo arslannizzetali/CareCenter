@@ -6,6 +6,15 @@ const ALGORITHM = "aes-256-gcm";
 const IV_LENGTH = 16;
 const MASTER_KEY = Buffer.from(env.MASTER_ENCRYPTION_KEY, "hex");
 
+// Deterministic (searchable) encryption for TC numbers uses an SIV-style construction:
+// the nonce is derived from the plaintext via HMAC, so identical TCs yield identical
+// ciphertext (equality search still works) while different TCs never share a nonce.
+// This removes the catastrophic AES-GCM nonce-reuse of the previous fixed zero-IV scheme.
+// Separate subkeys are derived so the master key is never used directly for both roles.
+const DETERMINISTIC_NONCE_LENGTH = 12; // standard GCM nonce size
+const TC_ENC_KEY = crypto.createHmac("sha256", MASTER_KEY).update("tc-enc-v2").digest();
+const TC_IV_KEY = crypto.createHmac("sha256", MASTER_KEY).update("tc-iv-v2").digest();
+
 interface WrappedKey {
   key: string;
   iv: string;
@@ -13,8 +22,10 @@ interface WrappedKey {
 }
 
 interface DeterministicCipherText {
+  v?: number;
   data: string;
   authTag: string;
+  iv?: string;
 }
 
 export interface EncryptedFile {
@@ -54,25 +65,41 @@ export class EncryptionService {
   verifyChecksum(buffer: Buffer, expectedChecksum: string): void {
     const actual = crypto.createHash("sha256").update(buffer).digest("hex");
     if (actual !== expectedChecksum) {
-      throw new BadRequestError("CHECKSUM_MISMATCH", "Dosya bütünlüğü doğrulanamadı");
+      throw new BadRequestError("CHECKSUM_MISMATCH", "File integrity could not be verified");
     }
   }
 
   encryptTc(tc: string): string {
-    const iv = Buffer.alloc(IV_LENGTH, 0);
-    const cipher = crypto.createCipheriv(ALGORITHM, MASTER_KEY, iv);
+    // SIV-style synthetic nonce: deterministic in the plaintext, distinct across values.
+    const iv = crypto
+      .createHmac("sha256", TC_IV_KEY)
+      .update(tc, "utf8")
+      .digest()
+      .subarray(0, DETERMINISTIC_NONCE_LENGTH);
+    const cipher = crypto.createCipheriv(ALGORITHM, TC_ENC_KEY, iv);
     const encrypted = Buffer.concat([cipher.update(tc, "utf8"), cipher.final()]);
     const payload: DeterministicCipherText = {
+      v: 2,
       data: encrypted.toString("hex"),
-      authTag: cipher.getAuthTag().toString("hex")
+      authTag: cipher.getAuthTag().toString("hex"),
+      iv: iv.toString("hex")
     };
     return JSON.stringify(payload);
   }
 
   decryptTc(encrypted: string): string {
     const payload = this.parseDeterministicCipherText(encrypted);
-    const iv = Buffer.alloc(IV_LENGTH, 0);
-    const decipher = crypto.createDecipheriv(ALGORITHM, MASTER_KEY, iv);
+
+    // v2+: per-value synthetic nonce stored alongside the ciphertext.
+    if (payload.iv) {
+      const decipher = crypto.createDecipheriv(ALGORITHM, TC_ENC_KEY, Buffer.from(payload.iv, "hex"));
+      decipher.setAuthTag(Buffer.from(payload.authTag, "hex"));
+      return Buffer.concat([decipher.update(Buffer.from(payload.data, "hex")), decipher.final()]).toString("utf8");
+    }
+
+    // Legacy records encrypted with the old fixed zero-IV scheme (read-only fallback).
+    const legacyIv = Buffer.alloc(IV_LENGTH, 0);
+    const decipher = crypto.createDecipheriv(ALGORITHM, MASTER_KEY, legacyIv);
     decipher.setAuthTag(Buffer.from(payload.authTag, "hex"));
     return Buffer.concat([decipher.update(Buffer.from(payload.data, "hex")), decipher.final()]).toString("utf8");
   }
@@ -124,11 +151,13 @@ export class EncryptionService {
   private parseDeterministicCipherText(encrypted: string): DeterministicCipherText {
     const parsed = JSON.parse(encrypted) as Partial<DeterministicCipherText>;
     if (!parsed.data || !parsed.authTag) {
-      throw new BadRequestError("INVALID_ENCRYPTED_VALUE", "Şifreli veri geçersiz");
+      throw new BadRequestError("INVALID_ENCRYPTED_VALUE", "Invalid encrypted value");
     }
     return {
       data: parsed.data,
-      authTag: parsed.authTag
+      authTag: parsed.authTag,
+      ...(parsed.v !== undefined ? { v: parsed.v } : {}),
+      ...(parsed.iv !== undefined ? { iv: parsed.iv } : {})
     };
   }
 }

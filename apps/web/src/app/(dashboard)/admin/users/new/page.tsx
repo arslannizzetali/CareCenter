@@ -20,10 +20,10 @@ export default function NewUserPage() {
   const mutation = useMutation({
     mutationFn: () => adminApi.createUser(form),
     onSuccess: () => {
-      toast.success("Çalışan oluşturuldu");
+      toast.success("Staff member created");
       router.push("/admin/users");
     },
-    onError: () => toast.error("Çalışan oluşturulamadı")
+    onError: () => toast.error("Could not create staff member")
   });
 
   return (
@@ -35,18 +35,18 @@ export default function NewUserPage() {
       className="mx-auto max-w-3xl space-y-5 rounded-3xl border border-border bg-white p-6 shadow-sm"
     >
       <div>
-        <h2 className="text-xl font-bold text-text">Yeni Çalışan</h2>
-        <p className="text-sm text-muted">Şifre bcrypt cost 12 ile API tarafında hashlenir.</p>
+        <h2 className="text-xl font-bold text-text">New Staff Member</h2>
+        <p className="text-sm text-muted">The password is hashed on the API side with bcrypt cost 12.</p>
       </div>
       <div className="grid gap-4 md:grid-cols-2">
-        <Input label="Ad" value={form.firstName} onChange={(value) => setForm({ ...form, firstName: value })} />
-        <Input label="Soyad" value={form.lastName} onChange={(value) => setForm({ ...form, lastName: value })} />
-        <Input label="E-posta" type="email" value={form.email} onChange={(value) => setForm({ ...form, email: value })} />
-        <Input label="Şifre" type="password" value={form.password} onChange={(value) => setForm({ ...form, password: value })} />
+        <Input label="First Name" value={form.firstName} onChange={(value) => setForm({ ...form, firstName: value })} />
+        <Input label="Last Name" value={form.lastName} onChange={(value) => setForm({ ...form, lastName: value })} />
+        <Input label="Email" type="email" value={form.email} onChange={(value) => setForm({ ...form, email: value })} />
+        <Input label="Password" type="password" value={form.password} onChange={(value) => setForm({ ...form, password: value })} />
         <label className="block">
-          <span className="mb-1 block text-sm font-semibold text-text">Rol</span>
+          <span className="mb-1 block text-sm font-semibold text-text">Role</span>
           <select value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value })} className="focus-ring w-full rounded-xl border border-border px-4 py-3">
-            <option value="EMPLOYEE">Çalışan</option>
+            <option value="EMPLOYEE">Employee</option>
             <option value="ADMIN">Admin</option>
           </select>
         </label>
@@ -56,7 +56,7 @@ export default function NewUserPage() {
         </label>
       </div>
       <button className="rounded-xl bg-primary px-6 py-3 font-semibold text-white disabled:opacity-60" disabled={mutation.isPending}>
-        Kaydet
+        Save
       </button>
     </form>
   );

@@ -1,6 +1,8 @@
 import { Router } from "express";
 import {
   auditLogQuerySchema,
+  deletedPatientQuerySchema,
+  patientIdParamSchema,
   patientQuerySchema,
   recentUpdatesQuerySchema,
   retentionPoliciesSchema
@@ -17,6 +19,21 @@ adminRoutes.get("/dashboard-stats", adminController.dashboardStats);
 adminRoutes.get("/recent-updates", validate({ query: recentUpdatesQuerySchema }), adminController.recentUpdates);
 adminRoutes.get("/audit-logs", validate({ query: auditLogQuerySchema }), adminController.auditLogs);
 adminRoutes.get("/patients", validate({ query: patientQuerySchema }), adminController.patients);
+adminRoutes.get(
+  "/patients/deleted",
+  validate({ query: deletedPatientQuerySchema }),
+  adminController.deletedPatients
+);
+adminRoutes.post(
+  "/patients/:id/restore",
+  validate({ params: patientIdParamSchema }),
+  adminController.restorePatient
+);
+adminRoutes.delete(
+  "/patients/:id/permanent",
+  validate({ params: patientIdParamSchema }),
+  adminController.purgePatient
+);
 adminRoutes.get("/retention-policies", adminController.retentionPolicies);
 adminRoutes.patch(
   "/retention-policies",

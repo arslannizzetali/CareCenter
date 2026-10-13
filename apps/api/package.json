@@ -15,6 +15,7 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.133.0",
     "@bakimevi/shared-types": "workspace:*",
     "@bakimevi/validation": "workspace:*",
     "@prisma/client": "^5.22.0",

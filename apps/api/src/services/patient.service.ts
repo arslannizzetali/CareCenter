@@ -1,10 +1,12 @@
-import type { CareType, MobilityLevel, PatientStatus, Prisma } from "@prisma/client";
+import type { CareType, DisabilityType, MobilityLevel, PatientStatus, Prisma } from "@prisma/client";
 import type { CreatePatientInput, UpdatePatientInput } from "@bakimevi/validation";
 import { prisma } from "../config/database.js";
 import { auditService } from "./audit.service.js";
 import { encryptionService } from "./encryption.service.js";
-import { NotFoundError } from "../utils/errors.js";
+import { storageService } from "./storage.service.js";
+import { ConflictError, NotFoundError } from "../utils/errors.js";
 import { omitUndefined, toJson } from "../utils/object.js";
+import { yearsAgo } from "../utils/date.js";
 import { getPagination, makePagination } from "../utils/pagination.js";
 import type { Requester } from "./patient-update.service.js";
 
@@ -14,6 +16,8 @@ export interface PatientQuery {
   search?: string;
   status?: PatientStatus;
   careType?: CareType;
+  disabilityType?: DisabilityType;
+  ageGroup?: "UNDER_65" | "OVER_65";
   mobilityLevel?: MobilityLevel;
   admissionFrom?: Date;
   admissionTo?: Date;
@@ -101,7 +105,7 @@ export class PatientService {
       include: this.patientDetailInclude(requester)
     });
     if (!patient) {
-      throw new NotFoundError("PATIENT_NOT_FOUND", "Hasta bulunamadı");
+      throw new NotFoundError("PATIENT_NOT_FOUND", "Patient not found");
     }
 
     await auditService.write({
@@ -141,7 +145,20 @@ export class PatientService {
   }
 
   async delete(id: string, requester: Requester): Promise<void> {
-    await this.ensureExists(id);
+    const patient = await prisma.patient.findFirst({
+      where: { id, deletedAt: null },
+      select: { status: true }
+    });
+    if (!patient) {
+      throw new NotFoundError("PATIENT_NOT_FOUND", "Patient not found");
+    }
+    if (patient.status !== "DISCHARGED") {
+      throw new ConflictError(
+        "PATIENT_NOT_DISCHARGED",
+        "Only discharged patients can be deleted. First set the status to 'Discharged'."
+      );
+    }
+
     await prisma.patient.update({
       where: { id },
       data: { deletedAt: new Date() }
@@ -157,10 +174,108 @@ export class PatientService {
     });
   }
 
+  async listDeleted(query: { page?: number; limit?: number; search?: string }) {
+    const pagination = getPagination(query);
+    const where: Prisma.PatientWhereInput = {
+      deletedAt: { not: null },
+      ...this.searchFilter(query.search)
+    };
+
+    const [total, patients] = await prisma.$transaction([
+      prisma.patient.count({ where }),
+      prisma.patient.findMany({
+        where,
+        skip: pagination.skip,
+        take: pagination.take,
+        orderBy: { deletedAt: "desc" },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          roomNumber: true,
+          careType: true,
+          status: true,
+          admissionDate: true,
+          deletedAt: true
+        }
+      })
+    ]);
+
+    return {
+      data: patients,
+      pagination: makePagination(total, pagination.page, pagination.limit)
+    };
+  }
+
+  async restore(id: string, requester: Requester) {
+    const patient = await prisma.patient.findFirst({
+      where: { id, deletedAt: { not: null } }
+    });
+    if (!patient) {
+      throw new NotFoundError("PATIENT_NOT_FOUND", "Deleted patient record not found");
+    }
+
+    const restored = await prisma.patient.update({
+      where: { id },
+      data: { deletedAt: null }
+    });
+
+    await auditService.write({
+      userId: requester.userId,
+      action: "PATIENT_RESTORED",
+      resourceType: "Patient",
+      resourceId: id,
+      ipAddress: requester.ipAddress,
+      userAgent: requester.userAgent
+    });
+
+    return restored;
+  }
+
+  async hardDelete(id: string, requester: Requester): Promise<void> {
+    const patient = await prisma.patient.findUnique({
+      where: { id },
+      include: { documents: { select: { storedFileName: true } } }
+    });
+    if (!patient) {
+      throw new NotFoundError("PATIENT_NOT_FOUND", "Patient not found");
+    }
+    if (patient.deletedAt === null) {
+      throw new ConflictError(
+        "PATIENT_NOT_ARCHIVED",
+        "To permanently delete, the patient must first be moved to the archive"
+      );
+    }
+
+    for (const document of patient.documents) {
+      try {
+        await storageService.deleteFile(document.storedFileName);
+      } catch {
+        // dosya zaten yoksa yok say
+      }
+    }
+
+    await prisma.$transaction([
+      prisma.patientUpdate.deleteMany({ where: { patientId: id } }),
+      prisma.document.deleteMany({ where: { patientId: id } }),
+      prisma.patient.delete({ where: { id } })
+    ]);
+
+    await auditService.write({
+      userId: requester.userId,
+      action: "PATIENT_PURGED",
+      resourceType: "Patient",
+      resourceId: id,
+      metadata: { documents: patient.documents.length },
+      ipAddress: requester.ipAddress,
+      userAgent: requester.userAgent
+    });
+  }
+
   async ensureExists(id: string): Promise<void> {
     const count = await prisma.patient.count({ where: { id, deletedAt: null } });
     if (count === 0) {
-      throw new NotFoundError("PATIENT_NOT_FOUND", "Hasta bulunamadı");
+      throw new NotFoundError("PATIENT_NOT_FOUND", "Patient not found");
     }
   }
 
@@ -180,11 +295,18 @@ export class PatientService {
     }) as Prisma.PatientUncheckedUpdateInput;
   }
 
+  /** So other services (e.g. the document matrix) can reuse the same patient filter. */
+  listWhere(query: PatientQuery): Prisma.PatientWhereInput {
+    return this.buildWhere(query);
+  }
+
   private buildWhere(query: PatientQuery): Prisma.PatientWhereInput {
     return {
       deletedAt: null,
       ...(query.status ? { status: query.status } : {}),
       ...(query.careType ? { careType: query.careType } : {}),
+      ...(query.disabilityType ? { disabilityType: query.disabilityType } : {}),
+      ...this.ageGroupFilter(query.ageGroup),
       ...(query.mobilityLevel ? { mobilityLevel: query.mobilityLevel } : {}),
       ...(query.admissionFrom || query.admissionTo
         ? {
@@ -194,16 +316,37 @@ export class PatientService {
             }
           }
         : {}),
-      ...(query.search
-        ? {
-            OR: [
-              { firstName: { contains: query.search, mode: "insensitive" } },
-              { lastName: { contains: query.search, mode: "insensitive" } },
-              { roomNumber: { contains: query.search, mode: "insensitive" } }
-            ]
-          }
-        : {})
+      ...this.searchFilter(query.search)
     };
+  }
+
+  private ageGroupFilter(ageGroup?: "UNDER_65" | "OVER_65"): Prisma.PatientWhereInput {
+    if (!ageGroup) {
+      return {};
+    }
+    // 65 and over: born 65 years ago or earlier
+    const cutoff = yearsAgo(65);
+    return ageGroup === "OVER_65" ? { birthDate: { lte: cutoff } } : { birthDate: { gt: cutoff } };
+  }
+
+  private searchFilter(search?: string): Prisma.PatientWhereInput {
+    const term = search?.trim();
+    if (!term) {
+      return {};
+    }
+
+    const or: Prisma.PatientWhereInput[] = [
+      { firstName: { contains: term, mode: "insensitive" } },
+      { lastName: { contains: term, mode: "insensitive" } },
+      { roomNumber: { contains: term, mode: "insensitive" } }
+    ];
+
+    // National ID is stored encrypted and deterministically → exact match on the full 11 digits
+    if (/^\d{11}$/.test(term)) {
+      or.push({ tcNumberEncrypted: encryptionService.encryptTc(term) });
+    }
+
+    return { OR: or };
   }
 
   private patientDetailInclude(requester: Requester): Prisma.PatientInclude {

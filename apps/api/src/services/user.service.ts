@@ -3,7 +3,7 @@ import type { Prisma, Role } from "@prisma/client";
 import type { CreateUserInput, UpdateUserInput } from "@bakimevi/validation";
 import { prisma } from "../config/database.js";
 import { auditService } from "./audit.service.js";
-import { ConflictError, NotFoundError } from "../utils/errors.js";
+import { BadRequestError, ConflictError, NotFoundError } from "../utils/errors.js";
 import { omitUndefined } from "../utils/object.js";
 import { getPagination, makePagination } from "../utils/pagination.js";
 
@@ -12,13 +12,14 @@ export interface UserQuery {
   limit?: number;
   search?: string;
   isActive?: boolean;
+  deleted?: boolean;
 }
 
 export class UserService {
   async list(query: UserQuery) {
     const pagination = getPagination(query);
     const where: Prisma.UserWhereInput = {
-      deletedAt: null,
+      deletedAt: query.deleted ? { not: null } : null,
       ...(typeof query.isActive === "boolean" ? { isActive: query.isActive } : {}),
       ...(query.search
         ? {
@@ -51,7 +52,7 @@ export class UserService {
   async create(input: CreateUserInput, requester: RequestContext) {
     const existing = await prisma.user.findUnique({ where: { email: input.email } });
     if (existing) {
-      throw new ConflictError("USER_EMAIL_EXISTS", "Bu e-posta zaten kullanılıyor");
+      throw new ConflictError("USER_EMAIL_EXISTS", "This email is already in use");
     }
 
     const passwordHash = await bcrypt.hash(input.password, 12);
@@ -87,7 +88,7 @@ export class UserService {
       select: publicUserSelect
     });
     if (!user) {
-      throw new NotFoundError("USER_NOT_FOUND", "Kullanıcı bulunamadı");
+      throw new NotFoundError("USER_NOT_FOUND", "User not found");
     }
     return user;
   }
@@ -123,6 +124,10 @@ export class UserService {
   }
 
   async delete(id: string, requester: RequestContext): Promise<void> {
+    if (id === requester.userId) {
+      throw new BadRequestError("USER_SELF_DELETE", "You cannot delete your own account");
+    }
+
     await this.getById(id);
     await prisma.user.update({
       where: { id },
@@ -141,6 +146,30 @@ export class UserService {
       userAgent: requester.userAgent
     });
   }
+
+  async restore(id: string, requester: RequestContext) {
+    const user = await prisma.user.findFirst({ where: { id, deletedAt: { not: null } } });
+    if (!user) {
+      throw new NotFoundError("USER_NOT_FOUND", "Deleted staff member not found");
+    }
+
+    const restored = await prisma.user.update({
+      where: { id },
+      data: { deletedAt: null, isActive: true },
+      select: publicUserSelect
+    });
+
+    await auditService.write({
+      userId: requester.userId,
+      action: "USER_RESTORED",
+      resourceType: "User",
+      resourceId: id,
+      ipAddress: requester.ipAddress,
+      userAgent: requester.userAgent
+    });
+
+    return restored;
+  }
 }
 
 export interface RequestContext {
@@ -158,7 +187,8 @@ const publicUserSelect = {
   isActive: true,
   lastLoginAt: true,
   createdAt: true,
-  updatedAt: true
+  updatedAt: true,
+  deletedAt: true
 } satisfies Prisma.UserSelect;
 
 export const userService = new UserService();

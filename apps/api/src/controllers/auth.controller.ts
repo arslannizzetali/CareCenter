@@ -29,7 +29,7 @@ export class AuthController {
     try {
       const refreshToken = req.cookies?.[REFRESH_COOKIE];
       if (typeof refreshToken !== "string") {
-        throw new UnauthorizedError("REFRESH_TOKEN_REQUIRED", "Oturum yenileme bilgisi bulunamadı");
+        throw new UnauthorizedError("REFRESH_TOKEN_REQUIRED", "No refresh token provided");
       }
 
       const tokens = await authService.refresh(refreshToken, {

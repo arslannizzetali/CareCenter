@@ -7,7 +7,7 @@ const runIntegration = process.env.RUN_INTEGRATION === "true";
 const describeIntegration = runIntegration ? describe : describe.skip;
 
 describeIntegration("security integration", () => {
-  it("Login → token → korumalı endpoint erişimi", async () => {
+  it("Login → token → protected endpoint access", async () => {
     const server = await startServer();
     try {
       const login = await jsonRequest<{ accessToken: string }>(server.url, "/api/v1/auth/login", {
@@ -24,7 +24,7 @@ describeIntegration("security integration", () => {
     }
   });
 
-  it("Çalışan admin endpoint'ine erişemez", async () => {
+  it("An employee cannot access an admin endpoint", async () => {
     const server = await startServer();
     try {
       const login = await jsonRequest<{ accessToken: string }>(server.url, "/api/v1/auth/login", {
@@ -59,7 +59,7 @@ describeIntegration("security integration", () => {
     }
   });
 
-  it("Aynı refresh token iki kez kullanılınca oturum ailesi kapanır", async () => {
+  it("Reusing the same refresh token twice closes the session family", async () => {
     const server = await startServer();
     try {
       const response = await fetch(`${server.url}/api/v1/auth/login`, {
@@ -87,7 +87,7 @@ describeIntegration("security integration", () => {
     }
   });
 
-  it("Çalışan başka çalışanın evrakını indiremez", async () => {
+  it("An employee cannot download another employee's document", async () => {
     const server = await startServer();
     try {
       const login = await loginAs(server.url, "ahmet@bakimevi.com", "Calisan123!");
@@ -109,7 +109,7 @@ describeIntegration("security integration", () => {
     }
   });
 
-  it("Hasta güncelleme: çalışan sadece kendi girdiklerini görür", async () => {
+  it("Patient updates: an employee sees only their own entries", async () => {
     const server = await startServer();
     try {
       const login = await loginAs(server.url, "ahmet@bakimevi.com", "Calisan123!");
@@ -133,7 +133,7 @@ describeIntegration("security integration", () => {
     }
   });
 
-  it("Hasta detayı: çalışan başka çalışanların güncelleme ve evrak özetlerini görmez", async () => {
+  it("Patient detail: an employee does not see other employees' updates and document summaries", async () => {
     const server = await startServer();
     try {
       const login = await loginAs(server.url, "ahmet@bakimevi.com", "Calisan123!");
@@ -165,7 +165,7 @@ describeIntegration("security integration", () => {
     }
   });
 
-  it("Hasta listesi: çalışan başka çalışanların güncelleme ve evrak sayaçlarını görmez", async () => {
+  it("Patient list: an employee does not see other employees' update and document counts", async () => {
     const server = await startServer();
     try {
       const login = await loginAs(server.url, "ahmet@bakimevi.com", "Calisan123!");
