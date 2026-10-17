@@ -116,7 +116,7 @@ export class DocumentService {
       include: documentInclude
     });
 
-    // Yeni geçerlilik tarihi artık "yakında dolmuyor" ise süre-bildirimini kaldır.
+    // If the new expiry date no longer "expires soon", clear the expiry notification.
     if (input.expiresAt !== undefined && expiryStatus(updated.expiresAt) !== "RED") {
       await notificationService.dismissForDocument(documentId);
     }
