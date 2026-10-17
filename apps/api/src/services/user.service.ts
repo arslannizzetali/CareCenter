@@ -150,7 +150,7 @@ export class UserService {
   async restore(id: string, requester: RequestContext) {
     const user = await prisma.user.findFirst({ where: { id, deletedAt: { not: null } } });
     if (!user) {
-      throw new NotFoundError("USER_NOT_FOUND", "Deleted staff member not found");
+      throw new NotFoundError("USER_NOT_FOUND", "Deleted employee not found");
     }
 
     const restored = await prisma.user.update({

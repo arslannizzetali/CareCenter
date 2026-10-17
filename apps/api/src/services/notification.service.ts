@@ -66,7 +66,7 @@ export class NotificationService {
     await prisma.notification.delete({ where: { id } });
   }
 
-  /** Clears a document's expiry notification (e.g. when a new expiry date is set). */
+  /** Bir evrakın süre-bildirimini kaldırır (ör. yeni geçerlilik tarihi atanınca). */
   async dismissForDocument(documentId: string): Promise<void> {
     await prisma.notification.deleteMany({
       where: { type: "DOCUMENT_EXPIRING", documentId }
@@ -74,9 +74,9 @@ export class NotificationService {
   }
 
   /**
-   * For documents expiring within 1 month (or already expired), generates a notification
-   * in the admin panel. One notification per document (type + documentId unique).
-   * Called from the daily job.
+   * Süresi 1 ay içinde dolacak (veya çoktan dolmuş) evraklar için admin paneline
+   * bildirim üretir. Her evrak için tek bildirim (type + documentId benzersiz).
+   * Günlük job'dan çağrılır.
    */
   async scanExpiringDocuments(): Promise<{ created: number }> {
     const threshold = addMonths(new Date(), 1);
@@ -119,7 +119,7 @@ export class NotificationService {
         return {
           type: "DOCUMENT_EXPIRING" as const,
           title: `Document expiring: ${patientName}`,
-          body: `The document "${document.fileName}" for ${patientName}${room} expires on ${expiresLabel}.`,
+          body: `"${document.fileName}" for ${patientName}${room} expires on ${expiresLabel}.`,
           patientId: document.patientId,
           documentId: document.id
         };
@@ -145,7 +145,7 @@ export class NotificationService {
       .join("\n");
 
     if (!env.RESEND_API_KEY) {
-      console.log(`[demo-request] RESEND_API_KEY not set, email not sent.\n${subject}\n${body}`);
+      console.log(`[demo-request] RESEND_API_KEY is not set, email not sent.\n${subject}\n${body}`);
       return;
     }
 
@@ -168,7 +168,7 @@ export class NotificationService {
         console.error(`[demo-request] Resend API error: ${response.status} ${await response.text()}`);
       }
     } catch (error) {
-      console.error("[demo-request] Failed to send email", error);
+      console.error("[demo-request] Could not send email", error);
     }
   }
 }

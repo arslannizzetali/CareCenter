@@ -3,7 +3,7 @@ import { prisma } from "../config/database.js";
 
 // Raw audit logs are technical (action codes, UUIDs). This module turns each
 // log into a plain English sentence an admin can read, e.g.
-// "Stephen King, gave medication to patient Jordan Smith: Parol 500 mg (oral)."
+// "Stephen King gave medication to resident Jordan Smith: Paracetamol 500 mg (oral)."
 
 type AuditLogWithUser = AuditLog & {
   user: { id: string; firstName: string; lastName: string; email: string; role: "ADMIN" | "EMPLOYEE" } | null;
@@ -55,9 +55,9 @@ function describeVitals(value: Prisma.JsonValue | null): string[] {
   const v = asMeta(value);
   const parts: string[] = [];
   if (str(v.bloodPressure)) parts.push(`BP ${String(v.bloodPressure)}`);
-  if (typeof v.heartRate === "number") parts.push(`HR ${v.heartRate}`);
+  if (typeof v.heartRate === "number") parts.push(`Pulse ${v.heartRate}`);
   if (typeof v.temperature === "number") parts.push(`Temp ${v.temperature}°C`);
-  if (typeof v.oxygenSaturation === "number") parts.push(`Oxygen ${v.oxygenSaturation}%`);
+  if (typeof v.oxygenSaturation === "number") parts.push(`SpO2 ${v.oxygenSaturation}%`);
   if (typeof v.bloodSugar === "number") parts.push(`Blood sugar ${v.bloodSugar} mg/dL`);
   if (typeof v.weight === "number") parts.push(`Weight ${v.weight} kg`);
   return parts;
@@ -152,12 +152,9 @@ function describeOne(log: AuditLogWithUser, lookups: Lookups): Omit<DescribedAud
   const document = log.resourceType === "Document" ? lookups.documents.get(log.resourceId) : undefined;
   const patientId = patientIdOf(log, meta) ?? update?.patientId ?? document?.patientId;
   const patientName = patientId ? lookups.patients.get(patientId) : undefined;
-  const engelli = patientName ? `patient ${patientName}` : "a deleted patient";
+  const resident = patientName ? `resident ${patientName}` : "a deleted resident";
   const targetUser = log.resourceType === "User" ? lookups.users.get(log.resourceId) ?? "a deleted user" : "";
-  const docTitle = document ? `"${document.typeName ?? document.fileName}"` : "";
-  const doc = document
-    ? { nom: `the ${docTitle} document`, acc: `the ${docTitle} document`, gen: `the ${docTitle} document` }
-    : { nom: "a document", acc: "a document", gen: "a document" };
+  const doc = document ? `the "${document.typeName ?? document.fileName}" document` : "a document";
   const isUrgent = meta.isUrgent === true;
 
   const result = (category: AuditCategory, text: string) => ({
@@ -165,82 +162,82 @@ function describeOne(log: AuditLogWithUser, lookups: Lookups): Omit<DescribedAud
     isUrgent,
     actorName,
     actorRole,
-    description: `${actorName}, ${text}`
+    description: `${actorName} ${text}`
   });
 
   switch (log.action) {
     case "PATIENT_UPDATE_CREATED": {
       const type = str(meta.updateType);
-      const detail = update?.content ? ` Not: "${shorten(update.content)}"` : "";
+      const detail = update?.content ? ` Note: "${shorten(update.content)}"` : "";
       switch (type) {
         case "MEDICATION": {
           const meds = update?.medications.length ? `: ${update.medications.join(", ")}` : "";
-          return result("CARE", `gave medication to ${engelli}${meds}.${detail}`);
+          return result("CARE", `gave medication to ${resident}${meds}.${detail}`);
         }
         case "CARE": {
           const care = update?.care.length ? `: ${update.care.join(", ")}` : "";
-          return result("CARE", `performed care for ${engelli}${care}.${detail}`);
+          return result("CARE", `provided care to ${resident}${care}.${detail}`);
         }
         case "VITAL_SIGNS": {
           const vitals = update?.vitals.length ? ` (${update.vitals.join(", ")})` : "";
-          return result("CARE", `measured vital signs for ${engelli}${vitals}.${detail}`);
+          return result("CARE", `measured the vital signs of ${resident}${vitals}.${detail}`);
         }
         case "STATUS_CHANGE":
-          return result("CARE", `reported a status change for ${engelli}.${detail}`);
+          return result("CARE", `reported a status change for ${resident}.${detail}`);
         case "INCIDENT":
-          return result("CARE", `reported an incident involving ${engelli}.${detail}`);
+          return result("CARE", `reported an incident/accident involving ${resident}.${detail}`);
         default:
-          return result("CARE", `observed ${engelli} and added a note.${detail}`);
+          return result("CARE", `observed ${resident} and added a note.${detail}`);
       }
     }
     case "PATIENT_UPDATE_EDITED":
-      return result("CARE", `edited a care record for ${engelli}.`);
+      return result("CARE", `edited a care entry for ${resident}.`);
     case "PATIENT_UPDATE_DELETED":
-      return result("CARE", `deleted a care record for ${engelli}.`);
+      return result("CARE", `deleted a care entry for ${resident}.`);
 
     case "PATIENT_CREATED":
-      return result("PATIENT", `registered ${patientName ? `patient ${patientName}` : "a new patient"} in the system.`);
+      return result("PATIENT", `registered ${patientName ? `resident ${patientName}` : "a new resident"}.`);
     case "PATIENT_VIEWED":
-      return result("PATIENT", `viewed ${engelli}'s file.`);
+      return result("PATIENT", `viewed the file of ${resident}.`);
     case "PATIENT_SEARCHED": {
       const search = str(asMeta(meta.query as Prisma.JsonValue).search);
-      return result("PATIENT", search ? `searched the patient list for "${search}".` : "viewed the patient list.");
+      return result("PATIENT", search ? `searched the resident list for "${search}".` : "viewed the resident list.");
     }
     case "PATIENT_UPDATED":
-      return result("PATIENT", `updated ${engelli}'s information.`);
+      return result("PATIENT", `updated the details of ${resident}.`);
     case "PATIENT_DELETED":
-      return result("PATIENT", `moved ${engelli}'s record to the archive.`);
+      return result("PATIENT", `moved ${resident} to the archive.`);
     case "PATIENT_RESTORED":
-      return result("PATIENT", `restored ${engelli}'s record from the archive.`);
+      return result("PATIENT", `restored ${resident} from the archive.`);
     case "PATIENT_PURGED":
-      return result("PATIENT", "permanently deleted an archived patient's record.");
+      return result("PATIENT", "permanently deleted an archived resident record.");
 
     case "DOCUMENT_UPLOADED":
-      return result("DOCUMENT", `uploaded ${doc.nom} for ${engelli}.`);
+      return result("DOCUMENT", `uploaded ${doc} for ${resident}.`);
     case "DOCUMENT_VIEWED":
-      return result("DOCUMENT", `viewed ${doc.acc} belonging to ${engelli}.`);
+      return result("DOCUMENT", `viewed ${doc} of ${resident}.`);
     case "DOCUMENT_DOWNLOADED":
-      return result("DOCUMENT", `downloaded ${doc.acc} belonging to ${engelli}.`);
+      return result("DOCUMENT", `downloaded ${doc} of ${resident}.`);
     case "DOCUMENT_META_UPDATED":
-      return result("DOCUMENT", `updated the details of ${doc.gen} belonging to ${engelli}.`);
+      return result("DOCUMENT", `updated the details of ${doc} of ${resident}.`);
     case "DOCUMENT_PRIORITY_CHANGED": {
       const from = priorityLabels[String(meta.oldPriority)] ?? "?";
       const to = priorityLabels[String(meta.newPriority)] ?? "?";
-      return result("DOCUMENT", `changed the priority of ${doc.gen} belonging to ${engelli} from ${from} → ${to}.`);
+      return result("DOCUMENT", `changed the priority of ${doc} of ${resident} from ${from} to ${to}.`);
     }
     case "DOCUMENT_DELETED":
       return meta.reason === "AUTO_DELETE"
-        ? { ...result("DOCUMENT", ""), description: `The system automatically deleted ${doc.acc} belonging to ${engelli} because its retention period expired.` }
-        : result("DOCUMENT", `deleted ${doc.acc} belonging to ${engelli}.`);
+        ? { ...result("DOCUMENT", ""), description: `The system automatically deleted ${doc} of ${resident} because its retention period ended.` }
+        : result("DOCUMENT", `deleted ${doc} of ${resident}.`);
 
     case "USER_CREATED":
-      return result("USER", `created a new ${meta.role === "ADMIN" ? "administrator" : "staff"} account for ${targetUser}.`);
+      return result("USER", `created a new ${meta.role === "ADMIN" ? "administrator" : "employee"} account for ${targetUser}.`);
     case "USER_UPDATED":
-      return result("USER", `updated the account of ${targetUser}.`);
+      return result("USER", `updated the details of user ${targetUser}.`);
     case "USER_DELETED":
-      return result("USER", `deactivated the account of ${targetUser}.`);
+      return result("USER", `closed the account of user ${targetUser}.`);
     case "USER_RESTORED":
-      return result("USER", `reactivated the account of ${targetUser}.`);
+      return result("USER", `reopened the account of user ${targetUser}.`);
 
     case "USER_LOGIN":
       return result("LOGIN", "signed in.");
@@ -249,19 +246,19 @@ function describeOne(log: AuditLogWithUser, lookups: Lookups): Omit<DescribedAud
     case "USER_LOGIN_FAILED": {
       const who = log.user ? actorName : lookups.users.get(log.resourceId) ?? log.resourceId;
       const reason = meta.reason === "INACTIVE_ACCOUNT" ? " (account disabled)" : " (wrong password)";
-      return { ...result("LOGIN", ""), description: `${who} — failed sign-in attempt${reason}.` };
+      return { ...result("LOGIN", ""), description: `Failed sign-in attempt for ${who}${reason}.` };
     }
     case "TOKEN_REUSE_DETECTED":
-      return result("LOGIN", "suspicious activity was detected in their session; the session was closed for security.");
+      return result("LOGIN", "had suspicious session activity; the session was closed for security.");
 
     case "RETENTION_POLICY_UPDATED":
-      return result("SYSTEM", "changed the document auto-deletion settings.");
+      return result("SYSTEM", "changed the automatic document deletion settings.");
     case "SETTINGS_CHANGED":
       return result("SYSTEM", "changed the system settings.");
     case "AI_SUMMARY_GENERATED": {
       const hours = typeof meta.hours === "number" ? meta.hours : null;
-      const range = hours ? ` (last ${hours} hours)` : "";
-      return result("CARE", `generated an AI handover summary for ${engelli}${range}.`);
+      const range = hours ? ` for the last ${hours} hours` : "";
+      return result("CARE", `generated an AI handover summary for ${resident}${range}.`);
     }
 
     default:

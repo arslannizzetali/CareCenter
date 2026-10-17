@@ -37,27 +37,27 @@ export default function AdminPatientsPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => adminApi.deletePatient(id),
     onSuccess: () => {
-      toast.success("Patient moved to archive");
+      toast.success("Resident moved to archive");
       void invalidate();
     },
     onError: (error) =>
-      toast.error(error instanceof ApiClientError ? error.message : "Could not delete patient")
+      toast.error(error instanceof ApiClientError ? error.message : "Could not delete resident")
   });
 
   const restoreMutation = useMutation({
     mutationFn: (id: string) => adminApi.restorePatient(id),
     onSuccess: () => {
-      toast.success("Patient restored");
+      toast.success("Resident restored");
       void invalidate();
     },
     onError: (error) =>
-      toast.error(error instanceof ApiClientError ? error.message : "Could not restore patient")
+      toast.error(error instanceof ApiClientError ? error.message : "Could not restore resident")
   });
 
   const purgeMutation = useMutation({
     mutationFn: (id: string) => adminApi.purgePatient(id),
     onSuccess: () => {
-      toast.success("Patient record permanently deleted");
+      toast.success("Resident record permanently deleted");
       void invalidate();
     },
     onError: (error) =>
@@ -67,7 +67,7 @@ export default function AdminPatientsPage() {
   const busy = deleteMutation.isPending || restoreMutation.isPending || purgeMutation.isPending;
 
   function handleDelete(id: string, name: string): void {
-    if (window.confirm(`Are you sure you want to move ${name}'s record to the archive?`)) {
+    if (window.confirm(`Are you sure you want to move ${name} to the archive?`)) {
       deleteMutation.mutate(id);
     }
   }
@@ -75,7 +75,7 @@ export default function AdminPatientsPage() {
   function handlePurge(id: string, name: string): void {
     if (
       window.confirm(
-        `${name}'s record and all its updates/documents will be PERMANENTLY deleted. This cannot be undone. Continue?`
+        `${name} and all their updates/documents will be PERMANENTLY deleted. This cannot be undone. Continue?`
       )
     ) {
       purgeMutation.mutate(id);
@@ -83,8 +83,8 @@ export default function AdminPatientsPage() {
   }
 
   const headers = archiveView
-    ? ["Name", "Room", "Type", "Deletion Date", "Action"]
-    : ["Name", "Room", "Type", "Disability Type", "Status", "Documents", "Action"];
+    ? ["Name", "Room", "Type", "Deleted On", "Actions"]
+    : ["Name", "Room", "Type", "Disability Type", "Status", "Documents", "Actions"];
 
   const rows =
     query.data?.map((patient) => {
@@ -111,7 +111,7 @@ export default function AdminPatientsPage() {
               className="flex items-center gap-1.5 rounded-xl px-2 py-1 text-xs font-semibold text-danger hover:bg-red-50 disabled:opacity-60"
             >
               <Trash2 className="h-3.5 w-3.5" />
-              Permanently Delete
+              Delete Permanently
             </button>
           </div>
         ];
@@ -132,7 +132,7 @@ export default function AdminPatientsPage() {
           <button
             onClick={() => handleDelete(patient.id, name)}
             disabled={busy || !canDelete}
-            title={canDelete ? "Move to archive" : "To delete, first set the status to 'Discharged'"}
+            title={canDelete ? "Move to archive" : "Set the status to 'Discharged' before deleting"}
             className="flex items-center gap-1.5 rounded-xl px-2 py-1 text-xs font-semibold text-danger hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
           >
             <Trash2 className="h-3.5 w-3.5" />
@@ -146,7 +146,7 @@ export default function AdminPatientsPage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-4">
         <h2 className="text-xl font-bold text-text">
-          {archiveView ? "Discharged / Archive" : "Admin Patient Panel"}
+          {archiveView ? "Discharged / Archive" : "Admin Resident Panel"}
         </h2>
         <div className="flex flex-wrap items-center justify-end gap-2">
           <button
@@ -155,7 +155,7 @@ export default function AdminPatientsPage() {
               archiveView ? "border-primary bg-blue-50 text-primary" : "border-border bg-white text-muted"
             }`}
           >
-            {archiveView ? "Active list" : "Discharged Archive"}
+            {archiveView ? "Active list" : "Discharge Archive"}
           </button>
           {!archiveView ? (
             <>
@@ -164,7 +164,7 @@ export default function AdminPatientsPage() {
                 className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 font-semibold text-white"
               >
                 <Plus className="h-4 w-4" />
-                New Patient
+                New Resident
               </Link>
               <button
                 onClick={() => exportCsv(query.data ?? [])}
@@ -220,7 +220,7 @@ export default function AdminPatientsPage() {
       <SimpleTable headers={headers} rows={rows} />
       {!rows.length ? (
         <p className="rounded-2xl bg-surface p-6 text-center text-muted">
-          {archiveView ? "No records in the archive." : "No patients found."}
+          {archiveView ? "No records in the archive." : "No residents found."}
         </p>
       ) : null}
     </div>
@@ -229,7 +229,7 @@ export default function AdminPatientsPage() {
 
 function exportCsv(patients: NonNullable<ReturnType<typeof adminApi.patients> extends Promise<infer T> ? T : never>) {
   const rows = [
-    ["First Name", "Last Name", "Room", "Type", "Status"],
+    ["First name", "Last name", "Room", "Type", "Status"],
     ...patients.map((patient) => [
       patient.firstName,
       patient.lastName,
@@ -243,7 +243,7 @@ function exportCsv(patients: NonNullable<ReturnType<typeof adminApi.patients> ex
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = "patients.csv";
+  link.download = "residents.csv";
   link.click();
   URL.revokeObjectURL(url);
 }

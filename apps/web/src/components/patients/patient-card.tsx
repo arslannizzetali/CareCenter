@@ -19,7 +19,7 @@ export function PatientCard({ patient }: { patient: Patient }) {
               {patient.firstName} {patient.lastName}
             </h2>
             <p className="text-sm text-muted">
-              {age(patient.birthDate)} yrs | {careTypeLabel(patient.careType)}
+              Age {age(patient.birthDate)} | {careTypeLabel(patient.careType)}
             </p>
           </div>
         </div>

@@ -9,7 +9,7 @@ const describeIntegration = runIntegration ? describe : describe.skip;
 const PATIENT_ID = "11111111-1111-4111-8111-111111111111";
 
 describeIntegration("POST /api/v1/patients/:id/ai/handover-summary", () => {
-  it("an unauthenticated user should get 401", async () => {
+  it("giriş yapmamış kullanıcı 401 almalı", async () => {
     const server = await startServer();
     try {
       const response = await fetch(`${server.url}/api/v1/patients/${PATIENT_ID}/ai/handover-summary`, {
@@ -23,7 +23,7 @@ describeIntegration("POST /api/v1/patients/:id/ai/handover-summary", () => {
     }
   });
 
-  it("should get 401 with an invalid token", async () => {
+  it("geçersiz token ile 401 almalı", async () => {
     const server = await startServer();
     try {
       const response = await fetch(`${server.url}/api/v1/patients/${PATIENT_ID}/ai/handover-summary`, {

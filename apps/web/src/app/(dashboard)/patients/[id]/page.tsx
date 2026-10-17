@@ -49,7 +49,7 @@ export default function PatientDetailPage() {
   const statusMutation = useMutation({
     mutationFn: (status: PatientStatus) => patientApi.update(params.id, { status }),
     onSuccess: () => {
-      toast.success("Patient status updated");
+      toast.success("Resident status updated");
       void queryClient.invalidateQueries({ queryKey: ["patient", params.id] });
     },
     onError: () => toast.error("Could not update status")
@@ -58,10 +58,10 @@ export default function PatientDetailPage() {
   const deleteMutation = useMutation({
     mutationFn: () => patientApi.delete(params.id),
     onSuccess: () => {
-      toast.success("Patient record deleted");
+      toast.success("Resident record deleted");
       router.push("/patients");
     },
-    onError: () => toast.error("Could not delete patient")
+    onError: () => toast.error("Could not delete resident")
   });
 
   const patient = patientQuery.data;
@@ -73,7 +73,7 @@ export default function PatientDetailPage() {
   const canDelete = patient.status === "DISCHARGED";
 
   function handleDelete(): void {
-    if (window.confirm(`Are you sure you want to delete the record for ${patient!.firstName} ${patient!.lastName}?`)) {
+    if (window.confirm(`Are you sure you want to delete ${patient!.firstName} ${patient!.lastName}?`)) {
       deleteMutation.mutate();
     }
   }
@@ -112,22 +112,22 @@ export default function PatientDetailPage() {
             <button
               onClick={handleDelete}
               disabled={deleteMutation.isPending || !canDelete}
-              title={canDelete ? "Delete record" : "To delete, first set the status to 'Discharged'"}
+              title={canDelete ? "Delete record" : "Set the status to 'Discharged' before deleting"}
               className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold text-danger hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Trash2 className="h-3.5 w-3.5" />
-              Delete Patient
+              Delete Resident
             </button>
           </div>
         </div>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <InfoBox label="Admission" value={formatDateTime(patient.admissionDate)} />
+          <InfoBox label="Admitted" value={formatDateTime(patient.admissionDate)} />
           <InfoBox label="Allergies" value={patient.allergies ?? "-"} danger />
           <InfoBox label="Current medications" value={patient.currentMedications ?? "-"} />
           <InfoBox label="Mobility" value={mobilityLevelLabels[patient.mobilityLevel as MobilityLevel] ?? patient.mobilityLevel} />
         </div>
         <div className="mt-4 rounded-2xl bg-surface p-4 text-sm text-text">
-          Emergency Contact: {patient.emergencyContactName} ({patient.emergencyContactRelation}) - {patient.emergencyContactPhone}
+          Emergency contact: {patient.emergencyContactName} ({patient.emergencyContactRelation}) - {patient.emergencyContactPhone}
         </div>
       </section>
 

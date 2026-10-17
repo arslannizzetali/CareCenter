@@ -16,7 +16,7 @@ import type { Requester } from "./patient-update.service.js";
 
 const PATIENT_ID = "11111111-1111-4111-8111-111111111111";
 const TC = "12345678901";
-const SUMMARY = "- No emergencies.\n- Metformin 500mg given.";
+const SUMMARY = "- Acil durum yok.\n- Metformin 500mg verildi.";
 
 const requester: Requester = { userId: "u-1", role: "EMPLOYEE", ipAddress: "10.0.0.5", userAgent: "vitest" };
 
@@ -43,12 +43,12 @@ function seedUpdates(count = 2) {
     Array.from({ length: count }, (_, index) => ({
       createdAt: new Date(Date.now() - (index + 1) * 60 * 60 * 1000),
       updateType: "MEDICATION",
-      content: `Ahmet Yılmaz (${TC}) took medication, Zeynep helped. Mehmet Demir visited.`,
+      content: `Ahmet Yılmaz (${TC}) ilacını aldı, Zeynep yardım etti. Mehmet Demir ziyarete geldi.`,
       medicationsGiven: [{ name: "Metformin", dosage: "500mg", route: "oral", givenAt: new Date().toISOString() }],
       vitalSigns: { bloodPressure: "130/85" },
       carePerformed: [],
       patientMood: "GOOD",
-      nextActionRequired: "Call Fatma Kaya at 0532 123 45 67",
+      nextActionRequired: "Fatma Kaya'yı 0532 123 45 67 numarasından ara",
       isUrgent: false
     }))
   );
@@ -59,7 +59,7 @@ describe("AiSummaryService.generateHandoverSummary", () => {
     vi.clearAllMocks();
   });
 
-  it("should send anonymized text to the LLM and return the summary", async () => {
+  it("anonimleştirilmiş metni LLM'e gönderip özeti döndürmeli", async () => {
     seedPatient();
     seedUpdates(2);
     const { factory, summarize } = mockProvider();
@@ -74,11 +74,11 @@ describe("AiSummaryService.generateHandoverSummary", () => {
     for (const secret of ["Ahmet", "Yılmaz", TC, "Fatma", "Kaya", "0532", "Zeynep", "Mehmet", "Demir"]) {
       expect(sent).not.toContain(secret);
     }
-    expect(sent).toContain("Patient");
+    expect(sent).toContain("Resident");
     expect(sent).toContain("Room: 12A");
   });
 
-  it("should write metadata to the audit log but NOT the summary itself", async () => {
+  it("audit log'a metadata yazmalı ama özetin kendisini YAZMAMALI", async () => {
     seedPatient();
     seedUpdates(3);
     const { factory } = mockProvider();
@@ -94,10 +94,10 @@ describe("AiSummaryService.generateHandoverSummary", () => {
       resourceId: PATIENT_ID,
       metadata: { patientId: PATIENT_ID, hours: 12, updateCount: 3, provider: "claude", outcome: "SUCCESS" }
     });
-    expect(JSON.stringify(entry)).not.toContain("Metformin 500mg given");
+    expect(JSON.stringify(entry)).not.toContain("Metformin 500mg verildi");
   });
 
-  it("should fetch all staff records even for an employee, without selecting staff info", async () => {
+  it("çalışan için de tüm personelin kayıtlarını almalı, çalışan bilgisi seçmemeli", async () => {
     seedPatient();
     seedUpdates(1);
     const { factory } = mockProvider();
@@ -112,19 +112,19 @@ describe("AiSummaryService.generateHandoverSummary", () => {
     expect(Date.now() - since.getTime()).toBeGreaterThanOrEqual(48 * 60 * 60 * 1000 - 1000);
   });
 
-  it("should return 'No records in this range' without calling the LLM when there are no records", async () => {
+  it("kayıt yoksa LLM'i çağırmadan 'Bu aralıkta kayıt yok' dönmeli", async () => {
     seedPatient();
     seedUpdates(0);
     const { factory, summarize } = mockProvider();
 
     const result = await new AiSummaryService(factory).generateHandoverSummary(PATIENT_ID, 24, requester);
 
-    expect(result.summary).toBe("No records in this range.");
+    expect(result.summary).toBe("No records in this period.");
     expect(summarize).not.toHaveBeenCalled();
     expect(auditWrite.mock.calls[0]?.[0].metadata).toMatchObject({ updateCount: 0, outcome: "NO_RECORDS" });
   });
 
-  it("should return 503 and never touch the database when the LLM is disabled", async () => {
+  it("LLM kapalıyken 503 vermeli ve veritabanına hiç dokunmamalı", async () => {
     const factory = vi.fn(() => {
       throw new LlmDisabledError();
     });
@@ -137,7 +137,7 @@ describe("AiSummaryService.generateHandoverSummary", () => {
     expect(prismaMock.patientUpdate.findMany).not.toHaveBeenCalled();
   });
 
-  it("should return 502 with a generic message and log it as FAILED when the provider errors", async () => {
+  it("sağlayıcı hata verirse genel Türkçe mesajla 502 dönmeli ve FAILED olarak loglamalı", async () => {
     seedPatient();
     seedUpdates(1);
     const { factory } = mockProvider(vi.fn().mockRejectedValue(new LlmUnavailableError()));
@@ -149,13 +149,13 @@ describe("AiSummaryService.generateHandoverSummary", () => {
     expect(auditWrite.mock.calls[0]?.[0].metadata).toMatchObject({ outcome: "FAILED" });
   });
 
-  it("should return 404 when the patient is not found", async () => {
+  it("Engelli bulunamazsa 404 dönmeli", async () => {
     prismaMock.patient.findFirst.mockResolvedValue(null);
     const { factory, summarize } = mockProvider();
 
     await expect(new AiSummaryService(factory).generateHandoverSummary(PATIENT_ID, 24, requester)).rejects.toMatchObject({
       statusCode: 404,
-      message: "Patient not found"
+      message: "Resident not found"
     });
     expect(summarize).not.toHaveBeenCalled();
   });

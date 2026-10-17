@@ -107,7 +107,7 @@ export const aiSummaryDailyLimiter = rateLimit({
     success: false,
     error: {
       code: "TOO_MANY_REQUESTS",
-      message: "You have reached the daily summary limit. Try again tomorrow."
+      message: "You have reached the daily summary limit. Please try again tomorrow."
     }
   }
 });

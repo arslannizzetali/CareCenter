@@ -22,10 +22,10 @@ export function DemoRequestForm({ onDone }: { onDone: () => void }) {
         ...(message ? { message } : {})
       }),
     onSuccess: () => {
-      toast.success("Your request has been received, we'll get back to you shortly.");
+      toast.success("Request received. We will contact you shortly.");
       onDone();
     },
-    onError: () => toast.error("Could not send the request. Please check your details and try again.")
+    onError: () => toast.error("Could not send the request. Please check the details and try again.")
   });
 
   return (
@@ -36,12 +36,12 @@ export function DemoRequestForm({ onDone }: { onDone: () => void }) {
       }}
       className="space-y-4"
     >
-      <p className="text-sm text-muted">Leave your institution details and we'll reach out to you.</p>
+      <p className="text-sm text-muted">Leave your facility details and we will get back to you.</p>
 
-      <Field label="Institution Name" value={institutionName} onChange={setInstitutionName} placeholder="e.g. Maplewood Care Center" />
-      <Field label="Contact Name" value={contactName} onChange={setContactName} placeholder="Full Name" />
-      <Field label="Phone" value={phone} onChange={setPhone} placeholder="+1 555 123 4567" type="tel" />
-      <Field label="Email" value={email} onChange={setEmail} placeholder="org@example.com" type="email" />
+      <Field label="Facility Name" value={institutionName} onChange={setInstitutionName} placeholder="e.g. Riverside Care Home" />
+      <Field label="Contact Name" value={contactName} onChange={setContactName} placeholder="Full name" />
+      <Field label="Phone" value={phone} onChange={setPhone} placeholder="05XXXXXXXXX" type="tel" />
+      <Field label="Email" value={email} onChange={setEmail} placeholder="facility@example.com" type="email" />
 
       <label className="block">
         <span className="mb-2 block text-sm font-semibold text-text">Message (optional)</span>

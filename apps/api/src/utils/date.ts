@@ -2,14 +2,14 @@ export function addMonths(date: Date, months: number): Date {
   const result = new Date(date);
   const targetMonth = result.getMonth() + months;
   result.setMonth(targetMonth);
-  // On month overflow (e.g. Jan 31 + 1 month), clamp to the last day of the month
+  // Ay taşması (örn. 31 Ocak + 1 ay) durumunda ayın son gününe sabitle
   if (result.getMonth() !== ((targetMonth % 12) + 12) % 12) {
     result.setDate(0);
   }
   return result;
 }
 
-/** The date `years` years before today — used to compute an age threshold. */
+/** Bugünden `years` yıl önceki tarih — yaş eşiği hesaplamak için. */
 export function yearsAgo(years: number): Date {
   const result = new Date();
   result.setFullYear(result.getFullYear() - years);

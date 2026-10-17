@@ -43,10 +43,13 @@ const envSchema = z.object({
     .enum(["true", "false"])
     .transform((value) => value === "true")
     .default("false"),
-  LLM_PROVIDER: z.enum(["claude", "ollama"]).default("ollama"),
+  LLM_PROVIDER: z.enum(["claude", "ollama", "amd"]).default("ollama"),
   ANTHROPIC_API_KEY: z.string().optional(),
   OLLAMA_URL: z.string().url().default("http://localhost:11434"),
   OLLAMA_MODEL: z.string().min(1).default("llama3.1"),
+  AMD_LLM_URL: z.string().url().optional(),
+  AMD_LLM_API_KEY: z.string().optional(),
+  AMD_LLM_MODEL: z.string().min(1).default("DeepSeek-V4-Flash"),
   AI_SUMMARY_DAILY_LIMIT: z.coerce.number().int().positive().default(50)
 });
 

@@ -25,21 +25,21 @@ export default function AdminUsersPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => adminApi.deleteUser(id),
     onSuccess: () => {
-      toast.success("Staff member deleted");
+      toast.success("Employee deleted");
       void invalidate();
     },
     onError: (error) =>
-      toast.error(error instanceof ApiClientError ? error.message : "Could not delete staff member")
+      toast.error(error instanceof ApiClientError ? error.message : "Could not delete employee")
   });
 
   const restoreMutation = useMutation({
     mutationFn: (id: string) => adminApi.restoreUser(id),
     onSuccess: () => {
-      toast.success("Staff member restored");
+      toast.success("Employee restored");
       void invalidate();
     },
     onError: (error) =>
-      toast.error(error instanceof ApiClientError ? error.message : "Could not restore staff member")
+      toast.error(error instanceof ApiClientError ? error.message : "Could not restore employee")
   });
 
   const busy = deleteMutation.isPending || restoreMutation.isPending;
@@ -92,7 +92,7 @@ export default function AdminUsersPage() {
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-4">
-        <h2 className="text-xl font-bold text-text">Staff</h2>
+        <h2 className="text-xl font-bold text-text">Employees</h2>
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setShowDeleted((value) => !value)}
@@ -100,19 +100,19 @@ export default function AdminUsersPage() {
               showDeleted ? "border-primary bg-blue-50 text-primary" : "border-border bg-white text-muted"
             }`}
           >
-            {showDeleted ? "Active staff" : "Deleted"}
+            {showDeleted ? "Active employees" : "Deleted"}
           </button>
           {!showDeleted ? (
             <Link href="/admin/users/new" className="rounded-xl bg-primary px-4 py-2 font-semibold text-white">
-              New Staff Member
+              New Employee
             </Link>
           ) : null}
         </div>
       </div>
-      <SimpleTable headers={["Name", "Email", "Role", "Status", "Action"]} rows={rows} />
+      <SimpleTable headers={["Name", "Email", "Role", "Status", "Actions"]} rows={rows} />
       {!rows.length ? (
         <p className="rounded-2xl bg-surface p-6 text-center text-muted">
-          {showDeleted ? "No deleted staff." : "No staff found."}
+          {showDeleted ? "No deleted employees." : "No employees found."}
         </p>
       ) : null}
     </div>

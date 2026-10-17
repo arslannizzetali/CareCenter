@@ -12,7 +12,7 @@ import { DemoRequestForm } from "@/components/forms/demo-request-form";
 export default function LoginPage() {
   const router = useRouter();
   const setSession = useAuthStore((state) => state.setSession);
-  const [email, setEmail] = useState("admin@bakimevi.com");
+  const [email, setEmail] = useState("admin@carecenter.app");
   const [password, setPassword] = useState("Admin123!");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -27,7 +27,7 @@ export default function LoginPage() {
       router.push("/dashboard");
     } catch (error) {
       const message =
-        error instanceof ApiClientError ? error.message : "Could not sign in. Please check your credentials.";
+        error instanceof ApiClientError ? error.message : "Login failed. Please check your credentials.";
       toast.error(message);
     } finally {
       setIsSubmitting(false);
@@ -44,7 +44,7 @@ export default function LoginPage() {
           </div>
           <h1 className="text-3xl font-bold text-text">CareCenter</h1>
           <p className="mt-2 text-sm text-muted">
-            {mode === "login" ? "Internal patient management system" : "New institution registration request"}
+            {mode === "login" ? "In-house resident management system" : "New facility registration request"}
           </p>
         </div>
 
@@ -58,7 +58,7 @@ export default function LoginPage() {
                   onChange={(event) => setEmail(event.target.value)}
                   type="email"
                   className="focus-ring w-full rounded-xl border border-border px-4 py-3 text-text"
-                  placeholder="admin@bakimevi.com"
+                  placeholder="admin@carecenter.app"
                   required
                 />
               </label>
@@ -97,7 +97,7 @@ export default function LoginPage() {
               onClick={() => setMode("demo")}
               className="mt-5 w-full text-center text-sm font-semibold text-primary hover:underline"
             >
-              Are you an institution? Request a Demo
+              Are you a facility? Request a Demo
             </button>
           </>
         ) : (

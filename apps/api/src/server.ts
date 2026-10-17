@@ -9,12 +9,12 @@ async function main(): Promise<void> {
 
   const app = createApp();
   app.listen(env.API_PORT, () => {
-    console.log(`CareCenter API running on port ${env.API_PORT}`);
+    console.log(`CareCenter API listening on port ${env.API_PORT}`);
   });
 }
 
 void main().catch((error: unknown) => {
   const message = error instanceof Error ? error.message : "Bilinmeyen hata";
-  console.error(`Failed to start API: ${message}`);
+  console.error(`API failed to start: ${message}`);
   process.exit(1);
 });

@@ -50,10 +50,10 @@ Varsayılan seed kullanıcıları:
 
 | Rol | E-posta | Şifre |
 | --- | --- | --- |
-| Admin | `admin@bakimevi.com` | `Admin123!` |
-| Çalışan | `ahmet@bakimevi.com` | `Calisan123!` |
-| Çalışan | `mehmet@bakimevi.com` | `Calisan123!` |
-| Çalışan | `fatma@bakimevi.com` | `Calisan123!` |
+| Admin | `admin@carecenter.app` | `Admin123!` |
+| Çalışan | `john@carecenter.app` | `Employee123!` |
+| Çalışan | `emily@carecenter.app` | `Employee123!` |
+| Çalışan | `michael@carecenter.app` | `Employee123!` |
 
 ### 2. Engelli Kaydı Oluşturma
 

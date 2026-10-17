@@ -13,7 +13,8 @@
     "prisma": "corepack pnpm --filter @bakimevi/api prisma",
     "db:migrate": "corepack pnpm --filter @bakimevi/api prisma migrate dev",
     "db:generate": "corepack pnpm --filter @bakimevi/api prisma generate",
-    "db:seed": "corepack pnpm --filter @bakimevi/api prisma db seed"
+    "db:seed": "corepack pnpm --filter @bakimevi/api prisma db seed",
+    "db:demo-reset": "corepack pnpm --filter @bakimevi/api prisma migrate reset --force"
   },
   "devDependencies": {
     "turbo": "^2.6.1",

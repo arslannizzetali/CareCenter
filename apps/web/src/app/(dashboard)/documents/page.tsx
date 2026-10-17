@@ -57,13 +57,13 @@ export default function DocumentMatrixPage() {
 
   const filterSummary = useMemo(() => {
     const parts: string[] = [];
-    if (deferredSearch) parts.push(`arama: "${deferredSearch}"`);
+    if (deferredSearch) parts.push(`search: "${deferredSearch}"`);
     parts.push(`status: ${statusOptions.find(([v]) => v === status)?.[1] ?? "All"}`);
     if (ageGroup) parts.push(ageOptions.find(([v]) => v === ageGroup)?.[1] ?? "");
     if (disabilityType) parts.push(disabilityOptions.find(([v]) => v === disabilityType)?.[1] ?? "");
     if (missingTypeId) {
       const name = typesQuery.data?.find((type) => type.id === missingTypeId)?.name;
-      if (name) parts.push(`without "${name}" document`);
+      if (name) parts.push(`missing "${name}"`);
     }
     return parts.filter(Boolean).join(" · ");
   }, [deferredSearch, status, ageGroup, disabilityType, missingTypeId, typesQuery.data]);
@@ -105,7 +105,7 @@ export default function DocumentMatrixPage() {
               <option value="">No filter</option>
               {typesQuery.data?.map((type) => (
                 <option key={type.id} value={type.id}>
-                  {type.name} olmayanlar
+                  Missing {type.name}
                 </option>
               ))}
             </select>
@@ -124,7 +124,7 @@ export default function DocumentMatrixPage() {
         <table className="w-full border-collapse text-left text-sm">
           <thead className="bg-surface text-xs uppercase tracking-wide text-muted">
             <tr>
-              <th className="sticky left-0 z-10 bg-surface px-4 py-3 font-bold">Patient</th>
+              <th className="sticky left-0 z-10 bg-surface px-4 py-3 font-bold">Resident</th>
               <th className="px-3 py-3 font-bold">Room</th>
               {types.map((type) => (
                 <th key={type.id} className="px-3 py-3 font-bold">
@@ -157,7 +157,7 @@ export default function DocumentMatrixPage() {
                         >
                           + Upload
                         </Link>
-                        <span className="hidden text-xs text-red-700 print:inline">YOK</span>
+                        <span className="hidden text-xs text-red-700 print:inline">MISSING</span>
                       </td>
                     );
                   }
@@ -186,7 +186,7 @@ export default function DocumentMatrixPage() {
       </div>
 
       <p className="no-print text-xs text-muted">
-        🔴 less than 1 month &nbsp; 🟡 less than 3 months &nbsp; 🟢 longer &nbsp; ⚪ no expiry
+        🔴 under 1 month &nbsp; 🟡 under 3 months &nbsp; 🟢 longer &nbsp; ⚪ no expiry
       </p>
     </div>
   );

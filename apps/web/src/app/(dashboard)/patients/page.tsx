@@ -31,13 +31,13 @@ export default function PatientsPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold text-text">Patients</h1>
+        <h1 className="text-2xl font-bold text-text">Residents</h1>
         <Link
           href="/patients/new"
           className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800"
         >
           <Plus className="h-4 w-4" />
-          New Patient
+          New Resident
         </Link>
       </div>
       <section className="rounded-3xl border border-border bg-surface p-5">
@@ -61,7 +61,7 @@ export default function PatientsPage() {
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {patientsQuery.data?.map((patient) => <PatientCard key={patient.id} patient={patient} />)}
       </section>
-      {!patientsQuery.data?.length ? <p className="rounded-2xl bg-surface p-6 text-center text-muted">No patients found.</p> : null}
+      {!patientsQuery.data?.length ? <p className="rounded-2xl bg-surface p-6 text-center text-muted">No residents found.</p> : null}
     </div>
   );
 }

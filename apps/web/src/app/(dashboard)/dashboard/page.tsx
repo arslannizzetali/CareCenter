@@ -25,6 +25,16 @@ export default function DashboardPage() {
     enabled: Boolean(user)
   });
 
+  // Urgent entries are fetched on their own: they are often older than the latest 10 updates.
+  const urgentQuery = useQuery({
+    queryKey: ["updates", "urgent", isAdmin],
+    queryFn: () => adminApi.recentUpdates({ limit: 5, isUrgent: true }),
+    enabled: isAdmin
+  });
+  const urgentUpdates = isAdmin
+    ? urgentQuery.data ?? []
+    : (updatesQuery.data ?? []).filter((update) => update.isUrgent);
+
   const stats = statsQuery.data;
 
   return (
@@ -32,19 +42,19 @@ export default function DashboardPage() {
       {isAdmin ? (
         <>
           <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <StatCard label="Active Patients" value={stats?.activePatients ?? "-"} helper="Current patient count" icon={UserRound} />
+            <StatCard label="Active Residents" value={stats?.activePatients ?? "-"} helper="Current resident count" icon={UserRound} />
             <StatCard
               label="Total Documents"
               value={(stats?.totalDocuments.red ?? 0) + (stats?.totalDocuments.yellow ?? 0) + (stats?.totalDocuments.green ?? 0)}
               helper={`🔴${stats?.totalDocuments.red ?? 0} 🟡${stats?.totalDocuments.yellow ?? 0} 🟢${stats?.totalDocuments.green ?? 0}`}
               icon={FileText}
             />
-            <StatCard label="Updates Today" value={stats?.todayUpdates ?? "-"} helper="All staff" icon={Activity} />
-            <StatCard label="Active Staff" value={stats?.activeEmployees ?? "-"} helper="Care staff" icon={Users} />
+            <StatCard label="Updates Today" value={stats?.todayUpdates ?? "-"} helper="All employees" icon={Activity} />
+            <StatCard label="Active Employees" value={stats?.activeEmployees ?? "-"} helper="Care staff" icon={Users} />
           </section>
           <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <StatCard
-              label="65 and Over"
+              label="Aged 65 and Over"
               value={stats?.ageBreakdown.over65 ?? "-"}
               helper={`Under 65: ${stats?.ageBreakdown.under65 ?? 0}`}
               icon={UserRound}
@@ -52,13 +62,13 @@ export default function DashboardPage() {
             <StatCard
               label="Physical Disability"
               value={stats?.disabilityBreakdown.physical ?? "-"}
-              helper="Active patients"
+              helper="Active residents"
               icon={Accessibility}
             />
             <StatCard
               label="Mental Disability"
               value={stats?.disabilityBreakdown.mental ?? "-"}
-              helper="Active patients"
+              helper="Active residents"
               icon={Brain}
             />
             <Link href="/admin/notifications" className="block">
@@ -73,8 +83,8 @@ export default function DashboardPage() {
         </>
       ) : (
         <section className="grid gap-4 md:grid-cols-2">
-          <StatCard label="My Updates Today" value="-" helper="My own records" icon={Activity} />
-          <StatCard label="Docs I Uploaded This Week" value="-" helper="My uploads" icon={FileText} />
+          <StatCard label="My Updates Today" value="-" helper="My own entries" icon={Activity} />
+          <StatCard label="Documents I Uploaded This Week" value="-" helper="My own uploads" icon={FileText} />
         </section>
       )}
 
@@ -92,8 +102,8 @@ export default function DashboardPage() {
             <h2 className="text-lg font-bold">Urgent Updates</h2>
           </div>
           <div className="space-y-3">
-            {updatesQuery.data?.filter((update) => update.isUrgent).map((update) => <UpdateCard key={update.id} update={update} />)}
-            {!updatesQuery.data?.some((update) => update.isUrgent) ? (
+            {urgentUpdates.map((update) => <UpdateCard key={update.id} update={update} />)}
+            {!urgentUpdates.length ? (
               <p className="rounded-xl bg-white p-4 text-sm text-muted">No urgent updates.</p>
             ) : null}
           </div>

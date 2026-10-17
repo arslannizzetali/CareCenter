@@ -20,7 +20,7 @@ body {
   @apply focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary;
 }
 
-/* Printing: only .print-area is visible, menu/header hidden */
+/* Yazdırma: sadece .print-area görünür, menü/başlık gizli */
 @media print {
   body {
     background: #ffffff;

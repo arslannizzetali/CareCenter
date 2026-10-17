@@ -105,7 +105,7 @@ export class PatientService {
       include: this.patientDetailInclude(requester)
     });
     if (!patient) {
-      throw new NotFoundError("PATIENT_NOT_FOUND", "Patient not found");
+      throw new NotFoundError("PATIENT_NOT_FOUND", "Resident not found");
     }
 
     await auditService.write({
@@ -150,12 +150,12 @@ export class PatientService {
       select: { status: true }
     });
     if (!patient) {
-      throw new NotFoundError("PATIENT_NOT_FOUND", "Patient not found");
+      throw new NotFoundError("PATIENT_NOT_FOUND", "Resident not found");
     }
     if (patient.status !== "DISCHARGED") {
       throw new ConflictError(
         "PATIENT_NOT_DISCHARGED",
-        "Only discharged patients can be deleted. First set the status to 'Discharged'."
+        "Only discharged residents can be deleted. Set the status to 'Discharged' first."
       );
     }
 
@@ -212,7 +212,7 @@ export class PatientService {
       where: { id, deletedAt: { not: null } }
     });
     if (!patient) {
-      throw new NotFoundError("PATIENT_NOT_FOUND", "Deleted patient record not found");
+      throw new NotFoundError("PATIENT_NOT_FOUND", "Deleted resident record not found");
     }
 
     const restored = await prisma.patient.update({
@@ -238,12 +238,12 @@ export class PatientService {
       include: { documents: { select: { storedFileName: true } } }
     });
     if (!patient) {
-      throw new NotFoundError("PATIENT_NOT_FOUND", "Patient not found");
+      throw new NotFoundError("PATIENT_NOT_FOUND", "Resident not found");
     }
     if (patient.deletedAt === null) {
       throw new ConflictError(
         "PATIENT_NOT_ARCHIVED",
-        "To permanently delete, the patient must first be moved to the archive"
+        "The resident must be archived before permanent deletion"
       );
     }
 
@@ -275,7 +275,7 @@ export class PatientService {
   async ensureExists(id: string): Promise<void> {
     const count = await prisma.patient.count({ where: { id, deletedAt: null } });
     if (count === 0) {
-      throw new NotFoundError("PATIENT_NOT_FOUND", "Patient not found");
+      throw new NotFoundError("PATIENT_NOT_FOUND", "Resident not found");
     }
   }
 
@@ -295,7 +295,7 @@ export class PatientService {
     }) as Prisma.PatientUncheckedUpdateInput;
   }
 
-  /** So other services (e.g. the document matrix) can reuse the same patient filter. */
+  /** Diğer servislerin (ör. evrak matrisi) aynı engelli filtresini kullanabilmesi için. */
   listWhere(query: PatientQuery): Prisma.PatientWhereInput {
     return this.buildWhere(query);
   }
@@ -324,7 +324,7 @@ export class PatientService {
     if (!ageGroup) {
       return {};
     }
-    // 65 and over: born 65 years ago or earlier
+    // 65 yaş ve üzeri: bugünden 65 yıl önce veya daha eski doğumlu
     const cutoff = yearsAgo(65);
     return ageGroup === "OVER_65" ? { birthDate: { lte: cutoff } } : { birthDate: { gt: cutoff } };
   }
@@ -341,7 +341,7 @@ export class PatientService {
       { roomNumber: { contains: term, mode: "insensitive" } }
     ];
 
-    // National ID is stored encrypted and deterministically → exact match on the full 11 digits
+    // TC şifreli ve deterministik saklanıyor → tam 11 haneyle birebir eşleşme
     if (/^\d{11}$/.test(term)) {
       or.push({ tcNumberEncrypted: encryptionService.encryptTc(term) });
     }

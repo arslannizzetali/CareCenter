@@ -1,6 +1,6 @@
 import { AppError } from "../../utils/errors.js";
 
-export type LlmProviderName = "claude" | "ollama";
+export type LlmProviderName = "claude" | "ollama" | "amd";
 
 export interface LlmProvider {
   readonly name: LlmProviderName;

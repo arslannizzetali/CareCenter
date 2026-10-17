@@ -7,17 +7,17 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/hooks/use-auth";
 
 const employeeNav = [
-  { href: "/patients", label: "Patients", icon: UserRound },
+  { href: "/patients", label: "Residents", icon: UserRound },
   { href: "/documents", label: "Documents", icon: FileText }
 ];
 
 const adminNav = [
-  { href: "/patients", label: "Patients", icon: UserRound },
+  { href: "/patients", label: "Residents", icon: UserRound },
   { href: "/documents", label: "Documents", icon: FileText },
-  { href: "/admin/users", label: "Staff", icon: Users },
+  { href: "/admin/users", label: "Employees", icon: Users },
   { href: "/admin/recent-updates", label: "Recent Updates", icon: Activity },
   { href: "/admin/notifications", label: "Notifications", icon: Bell },
-  { href: "/admin/audit-logs", label: "Activity Logs", icon: FileClock },
+  { href: "/admin/audit-logs", label: "Activity Log", icon: FileClock },
   { href: "/admin/settings", label: "Settings", icon: Settings }
 ];
 
@@ -51,7 +51,7 @@ export function Sidebar({ isMobileOpen, onMobileClose }: SidebarProps) {
             </div>
             <div>
               <p className="text-lg font-bold text-text">CareCenter</p>
-              <p className="text-xs text-muted">Internal management</p>
+              <p className="text-xs text-muted">In-house management</p>
             </div>
           </div>
           <button
@@ -103,7 +103,7 @@ export function Sidebar({ isMobileOpen, onMobileClose }: SidebarProps) {
             className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium text-danger hover:bg-red-50"
           >
             <LogOut className="h-5 w-5" />
-            Log out
+            Log Out
           </button>
         </div>
       </aside>

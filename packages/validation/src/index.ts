@@ -12,11 +12,11 @@ export const idParamSchema = z.object({
 });
 
 export const patientIdParamSchema = z.object({
-  id: z.string().uuid("Invalid patient ID")
+  id: z.string().uuid("Invalid resident ID")
 });
 
 export const patientUpdateIdParamSchema = z.object({
-  id: z.string().uuid("Invalid patient ID"),
+  id: z.string().uuid("Invalid resident ID"),
   updateId: z.string().uuid("Invalid update ID")
 });
 
@@ -35,7 +35,7 @@ export const loginSchema = z.object({
 });
 
 export const demoRequestSchema = z.object({
-  institutionName: z.string().min(2, "Institution name is required").max(150).transform((value) => value.trim()),
+  institutionName: z.string().min(2, "Facility name is required").max(150).transform((value) => value.trim()),
   contactName: z.string().min(2, "Contact name is required").max(100).transform((value) => value.trim()),
   phone: z.string().regex(phoneRegex, "Enter a valid phone number"),
   email: z.string().email("Enter a valid email").max(255).toLowerCase().trim(),
@@ -110,9 +110,9 @@ export const deletedPatientQuerySchema = paginationQuerySchema.extend({
 });
 
 export const documentMatrixQuerySchema = patientQuerySchema.extend({
-  // Fetch patients who do NOT have a document of this type (missing-document filter).
+  // Bu türde evrakı OLMAYAN engellileri getir (eksik evrak filtresi).
   missingTypeId: z.string().uuid().optional(),
-  // The matrix shows all matching patients; we raise the limit.
+  // Matris tüm eşleşen engellileri gösterir; limiti yükseltiyoruz.
   limit: z.coerce.number().int().min(1).max(1000).default(500)
 });
 
@@ -173,13 +173,13 @@ const emptyToUndefined = (value: unknown) =>
   value === "" || value === null || value === undefined ? undefined : value;
 
 export const documentUploadSchema = documentPrioritySchema.extend({
-  // Empty / not submitted => no expiry.
+  // Boş / gönderilmemiş => süresiz.
   expiresAt: z.preprocess(emptyToUndefined, z.coerce.date().optional()),
   documentTypeId: z.preprocess(emptyToUndefined, z.string().uuid().optional())
 });
 
-// For editing the type + expiry date of an uploaded document.
-// expiresAt: null => make it no-expiry, undefined => leave untouched.
+// Yüklenmiş bir evrakın tür + geçerlilik tarihini düzenlemek için.
+// expiresAt: null => süresiz yap, undefined => dokunma.
 export const documentMetaSchema = z.object({
   documentTypeId: z.string().uuid().nullable().optional(),
   expiresAt: z.coerce.date().nullable().optional()
@@ -225,7 +225,7 @@ export const retentionPoliciesSchema = z.object({
 
 export const handoverSummarySchema = z.object({
   hours: z.union([z.literal(12), z.literal(24), z.literal(48)], {
-    errorMap: () => ({ message: "Time range must be 12, 24 or 48" })
+    errorMap: () => ({ message: "Time range must be 12, 24 or 48 hours" })
   })
 }).strict();
 

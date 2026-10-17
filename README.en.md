@@ -1,8 +1,8 @@
-# CareCenter — Care Facility Management System
+# BakımEvi — Care Facility Management System
 
-> 🇹🇷 Turkish version: [README.tr.md](README.tr.md)
+> 🇹🇷 Türkçe sürüm: [README.tr.md](README.tr.md)
 
-CareCenter is an in-house resident tracking and document management system built for care facilities serving elderly and disabled residents (nursing homes, disability care homes, etc.). It is designed for intranet use within a single institution, not for general public internet access.
+BakımEvi is an in-house resident tracking and document management system built for care facilities serving elderly and disabled residents (nursing homes, disability care homes, etc.). It is designed for intranet use within a single institution, not for general public internet access.
 
 Throughout the interface the person receiving care is called **"Engelli"** (resident). The database model and API routes still use the name `patient` / `/patients` for backward compatibility; only the user-facing wording changed.
 
@@ -11,7 +11,7 @@ Throughout the interface the person receiving care is called **"Engelli"** (resi
 The system has been sold to a disability care facility and is running live at:
 
 - Facility address: [https://merkez.bakimbilgisistemi.com](https://merkez.bakimbilgisistemi.com)
-- The domain (`bakimbilgisistemi.com`) and the server belong to us (the CareCenter team).
+- The domain (`bakimbilgisistemi.com`) and the server belong to us (the BakımEvi team).
 
 ## Roles
 
@@ -31,11 +31,11 @@ The system has been sold to a disability care facility and is running live at:
 - **Document types** (fixed list, admin-managed) and a **document tracking matrix** (`/documents`): rows = residents, columns = types
 - **Document expiry date** (calendar, or "unlimited"); an admin-panel notification **1 month before** expiry; remaining-time colour (≤ 1 month red, ≤ 3 months yellow, else green)
 - **Print** button on the matrix — prints whatever the current filter shows
-- **Notification centre:** bell icon in the header + `/admin/notifications`. On an expiry notification the admin can set a **new expiry date** from a calendar ("New date" — the notification clears itself if the new date is more than a month out) or **dismiss** it; plus mark all read and manual scan
+- **Notification centre:** bell icon in the header + `/admin/notifications`. On an expiry notification the admin can set a **new expiry date** from a calendar ("Yeni süre" — the notification clears itself if the new date is more than a month out) or **dismiss** it ("Tamam"); plus mark all read and manual scan
 - Code-level delete protection for `RED` documents
 - Employee management: create, **edit**, activate/deactivate, soft-delete, **view deleted employees and restore them**
 - **Discharge-gated resident deletion**: a resident can only be deleted when its status is `DISCHARGED`; deletion is soft
-- **Discharge archive**: admin can restore an archived resident or permanently delete it (KVKK purge — removes the record, its updates, its documents, and the stored files)
+- **Discharge archive** (`Taburcu Arşivi`): admin can restore an archived resident or permanently delete it (KVKK purge — removes the record, its updates, its documents, and the stored files)
 - Admin panel, audit log, and recent updates
 - AES-256-based encryption for national ID numbers and file contents
 - JWT access tokens, refresh token rotation, and Redis-based brute-force protection
@@ -48,12 +48,12 @@ Default seed users:
 
 | Role | Email | Password |
 | --- | --- | --- |
-| Admin | `admin@bakimevi.com` | `Admin123!` |
-| Employee | `ahmet@bakimevi.com` | `Calisan123!` |
-| Employee | `mehmet@bakimevi.com` | `Calisan123!` |
-| Employee | `fatma@bakimevi.com` | `Calisan123!` |
+| Admin | `admin@carecenter.app` | `Admin123!` |
+| Employee | `john@carecenter.app` | `Employee123!` |
+| Employee | `emily@carecenter.app` | `Employee123!` |
+| Employee | `michael@carecenter.app` | `Employee123!` |
 
-**2. Resident Registration** — Both Admin and Employee roles can create new resident records at `/patients/new`, entering: full name, date of birth, gender, national ID number, room number, care type (`Elderly` / `Physically Disabled` / `Both`), mobility level (independent, assisted, or bedridden), emergency contact and phone, allergies, and ongoing medications.
+**2. Resident Registration** — Both Admin and Employee roles can create new resident records at `/patients/new`, entering: full name, date of birth, gender, national ID number, room number, care type (`Yaşlı` / `Bedensel Engelli` / `Her İkisi`), mobility level (independent, assisted, or bedridden), emergency contact and phone, allergies, and ongoing medications.
 
 The care type label `Bedensel Engelli` ("physically disabled") is intentionally distinct from the resident entity name ("Engelli") so the two are not confused.
 
@@ -94,7 +94,7 @@ Files are encrypted with AES-256-GCM before being uploaded to MinIO. The databas
 
 - Employee list, employee creation, **employee editing** (name, email, role, active flag, password reset), and a **deleted-employees view with restore**
 - Filtering all resident records, with a search box for name / surname / room / national ID
-- The **discharge archive**: soft-deleted residents, with **restore** and **permanent delete**
+- The **discharge archive** (`Taburcu Arşivi`): soft-deleted residents, with **restore** and **permanent delete**
 - Viewing all resident updates
 - A panel for recent and urgent updates
 - Audit log records

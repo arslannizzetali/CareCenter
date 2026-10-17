@@ -37,7 +37,7 @@ export function DocumentList({ title, hint, documents, tone }: DocumentListProps
     mutationFn: ({ id, body }: { id: string; body: { documentTypeId?: string | null; expiresAt?: string | null } }) =>
       documentApi.updateMeta(id, body),
     onSuccess: () => {
-      toast.success("Document info updated");
+      toast.success("Document details updated");
       setEditingId(null);
       invalidate();
     },
@@ -99,7 +99,7 @@ export function DocumentList({ title, hint, documents, tone }: DocumentListProps
                 <div>
                   <p className="font-semibold text-text">{document.fileName}</p>
                   <p className="text-xs text-muted">
-                    {document.documentType?.name ?? "No type specified"} · {(document.fileSize / 1024 / 1024).toFixed(1)} MB ·{" "}
+                    {document.documentType?.name ?? "Type not specified"} · {(document.fileSize / 1024 / 1024).toFixed(1)} MB ·{" "}
                     {formatDateTime(document.uploadedAt)}
                   </p>
                   <span
@@ -202,7 +202,7 @@ function MetaEditor({
         </select>
       </label>
       <label className="block text-xs">
-        <span className="mb-1 block font-semibold text-muted">Expiry date</span>
+        <span className="mb-1 block font-semibold text-muted">Expires</span>
         <div className="flex items-center gap-2">
           <input
             type="date"

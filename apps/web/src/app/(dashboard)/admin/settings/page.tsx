@@ -19,8 +19,8 @@ export default function AdminSettingsPage() {
         yellow: { retentionDays: yellowDays, autoDeleteEnabled: yellowEnabled },
         green: { retentionDays: greenDays, autoDeleteEnabled: greenEnabled }
       }),
-    onSuccess: () => toast.success("Deletion policies updated"),
-    onError: () => toast.error("Ayarlar kaydedilemedi")
+    onSuccess: () => toast.success("Retention policies updated"),
+    onError: () => toast.error("Could not save settings")
   });
 
   return (
@@ -74,7 +74,7 @@ function DocumentTypeManager() {
       setName("");
       void invalidate();
     },
-    onError: () => toast.error("Could not add (name may already exist)")
+    onError: () => toast.error("Could not add (the name may already exist)")
   });
 
   const toggleMutation = useMutation({
@@ -97,7 +97,7 @@ function DocumentTypeManager() {
     <section className="rounded-3xl border border-border bg-white p-6">
       <h2 className="mb-1 text-xl font-bold text-text">Document Types</h2>
       <p className="mb-4 text-sm text-muted">
-        Columns of the document matrix. Types in use or system types are not deleted, only deactivated.
+        Columns of the document matrix. Types that are in use or built in are deactivated instead of deleted.
       </p>
 
       <form
@@ -110,7 +110,7 @@ function DocumentTypeManager() {
         <input
           value={name}
           onChange={(event) => setName(event.target.value)}
-          placeholder="New type name (e.g. Patient Health Report)"
+          placeholder="New type name (e.g. Disability Health Report)"
           className="focus-ring flex-1 rounded-xl border border-border px-4 py-2.5"
         />
         <button

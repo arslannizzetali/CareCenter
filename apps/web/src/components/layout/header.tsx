@@ -9,11 +9,11 @@ import { useAuthStore } from "@/lib/store/auth.store";
 
 const pageTitles: Record<string, string> = {
   "/dashboard": "Dashboard",
-  "/patients": "Patients",
+  "/patients": "Residents",
   "/documents": "Document Tracking",
-  "/admin/users": "Staff",
+  "/admin/users": "Employees",
   "/admin/recent-updates": "Recent Updates",
-  "/admin/audit-logs": "Activity Logs",
+  "/admin/audit-logs": "Activity Log",
   "/admin/notifications": "Notifications",
   "/admin/settings": "Settings"
 };
@@ -25,7 +25,7 @@ interface HeaderProps {
 export function Header({ onMenuClick }: HeaderProps) {
   const pathname = usePathname();
   const isAdmin = useAuthStore((state) => state.user?.role === "ADMIN");
-  const title = pageTitles[pathname] ?? (pathname.includes("/patients/") ? "Patient Details" : "CareCenter");
+  const title = pageTitles[pathname] ?? (pathname.includes("/patients/") ? "Resident Details" : "CareCenter");
 
   const unreadQuery = useQuery({
     queryKey: ["notifications", "unread-count"],
@@ -47,7 +47,7 @@ export function Header({ onMenuClick }: HeaderProps) {
         </button>
         <div>
           <h1 className="text-2xl font-bold text-text">{title}</h1>
-          <p className="hidden text-sm text-muted sm:block">Securely manage patient care workflows</p>
+          <p className="hidden text-sm text-muted sm:block">Manage resident care securely</p>
         </div>
       </div>
       {isAdmin ? (

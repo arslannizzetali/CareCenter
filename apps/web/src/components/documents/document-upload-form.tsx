@@ -94,7 +94,7 @@ export function DocumentUploadForm() {
       >
         <UploadCloud className="mb-4 h-12 w-12 text-primary" />
         <span className="text-lg font-bold text-text">{file ? file.name : "Drop a file here or choose one"}</span>
-        <span className="mt-2 text-sm text-muted">PDF, JPEG, PNG, WEBP, DOCX, XLSX - maximum 50MB</span>
+        <span className="mt-2 text-sm text-muted">PDF, JPEG, PNG, WEBP, DOCX, XLSX - max 50MB</span>
       </button>
       <input
         ref={inputRef}
@@ -140,7 +140,7 @@ export function DocumentUploadForm() {
               No expiry
             </label>
           </div>
-          <span className="mt-1 block text-xs text-muted">A notification is sent to the admin panel 1 month before expiry.</span>
+          <span className="mt-1 block text-xs text-muted">The admin panel is notified 1 month before expiry.</span>
         </div>
       </div>
 

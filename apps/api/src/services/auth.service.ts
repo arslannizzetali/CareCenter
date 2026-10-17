@@ -97,7 +97,7 @@ export class AuthService {
     const payload = this.verifyRefreshToken(refreshToken);
     const familyRevoked = await redis.get(this.revokedFamilyKey(payload.tokenFamily));
     if (familyRevoked) {
-      throw new UnauthorizedError("TOKEN_REUSE_DETECTED", "All sessions have been terminated");
+      throw new UnauthorizedError("TOKEN_REUSE_DETECTED", "All sessions have been revoked");
     }
 
     const activeToken = await redis.get(this.refreshTokenKey(payload.jti));
@@ -112,7 +112,7 @@ export class AuthService {
         ipAddress: context.ipAddress,
         userAgent: context.userAgent
       });
-      throw new UnauthorizedError("TOKEN_REUSE_DETECTED", "All sessions have been terminated");
+      throw new UnauthorizedError("TOKEN_REUSE_DETECTED", "All sessions have been revoked");
     }
 
     await redis.del(this.refreshTokenKey(payload.jti));

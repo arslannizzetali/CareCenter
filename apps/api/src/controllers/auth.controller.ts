@@ -29,7 +29,7 @@ export class AuthController {
     try {
       const refreshToken = req.cookies?.[REFRESH_COOKIE];
       if (typeof refreshToken !== "string") {
-        throw new UnauthorizedError("REFRESH_TOKEN_REQUIRED", "No refresh token provided");
+        throw new UnauthorizedError("REFRESH_TOKEN_REQUIRED", "Refresh token not found");
       }
 
       const tokens = await authService.refresh(refreshToken, {

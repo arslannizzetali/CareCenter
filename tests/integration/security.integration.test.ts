@@ -12,7 +12,7 @@ describeIntegration("security integration", () => {
     try {
       const login = await jsonRequest<{ accessToken: string }>(server.url, "/api/v1/auth/login", {
         method: "POST",
-        body: { email: "admin@bakimevi.com", password: "Admin123!" }
+        body: { email: "admin@carecenter.app", password: "Admin123!" }
       });
 
       const me = await fetch(`${server.url}/api/v1/auth/me`, {
@@ -29,7 +29,7 @@ describeIntegration("security integration", () => {
     try {
       const login = await jsonRequest<{ accessToken: string }>(server.url, "/api/v1/auth/login", {
         method: "POST",
-        body: { email: "ahmet@bakimevi.com", password: "Calisan123!" }
+        body: { email: "john@carecenter.app", password: "Employee123!" }
       });
 
       const response = await fetch(`${server.url}/api/v1/admin/dashboard-stats`, {
@@ -44,7 +44,7 @@ describeIntegration("security integration", () => {
   it("RED evrak silinemez", async () => {
     const server = await startServer();
     try {
-      const login = await loginAs(server.url, "admin@bakimevi.com", "Admin123!");
+      const login = await loginAs(server.url, "admin@carecenter.app", "Admin123!");
       const redDocument = await prisma.document.findFirstOrThrow({
         where: { priority: "RED", isDeleted: false },
         select: { id: true }
@@ -65,7 +65,7 @@ describeIntegration("security integration", () => {
       const response = await fetch(`${server.url}/api/v1/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: "admin@bakimevi.com", password: "Admin123!" })
+        body: JSON.stringify({ email: "admin@carecenter.app", password: "Admin123!" })
       });
       expect(response.status).toBe(200);
       const cookie = response.headers.get("set-cookie");
@@ -90,9 +90,9 @@ describeIntegration("security integration", () => {
   it("An employee cannot download another employee's document", async () => {
     const server = await startServer();
     try {
-      const login = await loginAs(server.url, "ahmet@bakimevi.com", "Calisan123!");
+      const login = await loginAs(server.url, "john@carecenter.app", "Employee123!");
       const ahmet = await prisma.user.findUniqueOrThrow({
-        where: { email: "ahmet@bakimevi.com" },
+        where: { email: "john@carecenter.app" },
         select: { id: true }
       });
       const otherDocument = await prisma.document.findFirstOrThrow({
@@ -112,9 +112,9 @@ describeIntegration("security integration", () => {
   it("Patient updates: an employee sees only their own entries", async () => {
     const server = await startServer();
     try {
-      const login = await loginAs(server.url, "ahmet@bakimevi.com", "Calisan123!");
+      const login = await loginAs(server.url, "john@carecenter.app", "Employee123!");
       const ahmet = await prisma.user.findUniqueOrThrow({
-        where: { email: "ahmet@bakimevi.com" },
+        where: { email: "john@carecenter.app" },
         select: { id: true }
       });
       const otherUpdate = await prisma.patientUpdate.findFirstOrThrow({
@@ -136,9 +136,9 @@ describeIntegration("security integration", () => {
   it("Patient detail: an employee does not see other employees' updates and document summaries", async () => {
     const server = await startServer();
     try {
-      const login = await loginAs(server.url, "ahmet@bakimevi.com", "Calisan123!");
+      const login = await loginAs(server.url, "john@carecenter.app", "Employee123!");
       const ahmet = await prisma.user.findUniqueOrThrow({
-        where: { email: "ahmet@bakimevi.com" },
+        where: { email: "john@carecenter.app" },
         select: { id: true }
       });
       const otherUpdate = await prisma.patientUpdate.findFirstOrThrow({
@@ -168,9 +168,9 @@ describeIntegration("security integration", () => {
   it("Patient list: an employee does not see other employees' update and document counts", async () => {
     const server = await startServer();
     try {
-      const login = await loginAs(server.url, "ahmet@bakimevi.com", "Calisan123!");
+      const login = await loginAs(server.url, "john@carecenter.app", "Employee123!");
       const ahmet = await prisma.user.findUniqueOrThrow({
-        where: { email: "ahmet@bakimevi.com" },
+        where: { email: "john@carecenter.app" },
         select: { id: true }
       });
       const otherUpdate = await prisma.patientUpdate.findFirstOrThrow({

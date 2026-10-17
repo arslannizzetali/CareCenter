@@ -44,7 +44,7 @@ export class DocumentService {
   ) {
     const patient = await prisma.patient.findFirst({ where: { id: patientId, deletedAt: null }, select: { id: true } });
     if (!patient) {
-      throw new NotFoundError("PATIENT_NOT_FOUND", "Patient not found");
+      throw new NotFoundError("PATIENT_NOT_FOUND", "Resident not found");
     }
     if (meta.documentTypeId) {
       await this.assertDocumentType(meta.documentTypeId);
@@ -94,7 +94,7 @@ export class DocumentService {
   async updateMeta(documentId: string, input: DocumentMetaInput, requester: Requester) {
     const document = await this.getDocument(documentId);
     if (requester.role === "EMPLOYEE" && document.uploadedById !== requester.userId) {
-      throw new ForbiddenError("DOCUMENT_ACCESS_DENIED", "You don't have permission to edit this document");
+      throw new ForbiddenError("DOCUMENT_ACCESS_DENIED", "You are not allowed to edit this document");
     }
     if (input.documentTypeId) {
       await this.assertDocumentType(input.documentTypeId);
@@ -116,7 +116,7 @@ export class DocumentService {
       include: documentInclude
     });
 
-    // If the new expiry date no longer "expires soon", clear the expiry notification.
+    // Yeni geçerlilik tarihi artık "yakında dolmuyor" ise süre-bildirimini kaldır.
     if (input.expiresAt !== undefined && expiryStatus(updated.expiresAt) !== "RED") {
       await notificationService.dismissForDocument(documentId);
     }
@@ -135,8 +135,8 @@ export class DocumentService {
   }
 
   /**
-   * Document matrix: row = patient, column = document type.
-   * Each cell holds that patient's (non-deleted, most recent) document of that type.
+   * Evrak matrisi: satır = engelli, sütun = evrak türü.
+   * Her hücrede o engellinin o türdeki (silinmemiş, en yeni) evrakı.
    */
   async matrix(query: DocumentMatrixQuery, requester: Requester) {
     const patientWhere = patientService.listWhere(query);
@@ -212,7 +212,7 @@ export class DocumentService {
     return { types, rows };
   }
 
-  /** For the patient detail page: every active document type + that patient's latest document of each type. */
+  /** Engelli detay sayfası için: her aktif evrak türü + o engellinin o türdeki son evrakı. */
   async typeStatusForPatient(patientId: string, requester: Requester) {
     const [types, documents] = await Promise.all([
       prisma.documentType.findMany({
@@ -379,7 +379,7 @@ export class DocumentService {
   private async getAccessibleDocument(documentId: string, requester: Requester) {
     const document = await this.getDocument(documentId);
     if (requester.role === "EMPLOYEE" && document.uploadedById !== requester.userId) {
-      throw new ForbiddenError("DOCUMENT_ACCESS_DENIED", "You don't have permission to download this document");
+      throw new ForbiddenError("DOCUMENT_ACCESS_DENIED", "You are not allowed to download this document");
     }
 
     return document;

@@ -31,7 +31,7 @@ export default function AdminNotificationsPage() {
       toast.success("All notifications marked as read");
       invalidate();
     },
-    onError: () => toast.error("Operation failed")
+    onError: () => toast.error("Action failed")
   });
 
   const scan = useMutation({
@@ -149,7 +149,7 @@ function NotificationCard({
               href={`/patients/${notification.patientId}`}
               className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-primary"
             >
-              Open patient
+              Open resident
             </Link>
           ) : null}
           {canReschedule ? (
@@ -158,7 +158,7 @@ function NotificationCard({
               className="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-muted hover:text-primary"
             >
               <CalendarClock className="h-4 w-4" />
-              New date
+              New expiry
             </button>
           ) : null}
           <button
@@ -167,7 +167,7 @@ function NotificationCard({
             className="flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
           >
             <Check className="h-4 w-4" />
-            Tamam
+            OK
           </button>
         </div>
       </div>

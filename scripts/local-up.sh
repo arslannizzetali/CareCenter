@@ -1,70 +1,70 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Brings up the local development environment with a single command:
+# Lokal geliştirme ortamını tek komutla ayağa kaldırır:
 #   - Docker servisleri (Postgres, Redis, MinIO)
-#   - Prisma client + database schema (migrate deploy)
-#   - Seed data (admin + sample staff/patient records)
+#   - Prisma client + veritabanı şeması (migrate deploy)
+#   - Seed verisi (admin + örnek çalışan/engelli kayıtları)
 #
-# Usage:
+# Kullanım:
 #   ./scripts/local-up.sh
-# Then in a separate terminal:
+# Sonra ayrı bir terminalde:
 #   corepack pnpm dev
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-echo "==> Is Docker running?"
+echo "==> Docker çalışıyor mu?"
 if ! docker info >/dev/null 2>&1; then
-  echo "ERROR: Docker daemon is not running. Open Docker Desktop and try again." >&2
+  echo "HATA: Docker daemon çalışmıyor. Docker Desktop'ı açıp tekrar dene." >&2
   exit 1
 fi
 
-echo "==> Dependencies (pnpm install)"
+echo "==> Bağımlılıklar (pnpm install)"
 corepack pnpm install
 
-echo "==> Starting Docker services (postgres, redis, minio)"
+echo "==> Docker servisleri başlatılıyor (postgres, redis, minio)"
 docker compose up -d postgres redis minio
 
-echo "==> Waiting for Postgres to become ready"
+echo "==> Postgres hazır olana kadar bekleniyor"
 for i in $(seq 1 30); do
   if docker exec bakimevi-postgres pg_isready -U bakim_user -d bakim_db >/dev/null 2>&1; then
-    echo "    Postgres is ready."
+    echo "    Postgres hazır."
     break
   fi
   if [[ "$i" == "30" ]]; then
-    echo "ERROR: Postgres did not become ready within 30s." >&2
+    echo "HATA: Postgres 30 sn içinde hazır olmadı." >&2
     exit 1
   fi
   sleep 1
 done
 
-echo "==> Generating Prisma client"
+echo "==> Prisma client üretiliyor"
 corepack pnpm db:generate
 
-echo "==> Applying database schema (migrate deploy)"
+echo "==> Veritabanı şeması uygulanıyor (migrate deploy)"
 corepack pnpm --filter @bakimevi/api exec prisma migrate deploy
 
-echo "==> Loading seed data"
+echo "==> Seed verisi yükleniyor"
 corepack pnpm db:seed
 
 cat <<'DONE'
 
 ==================================================
-Local environment is ready.
+Lokal ortam hazır.
 
   Web:            http://localhost:3000
   API:           http://localhost:3001/health
   MinIO konsol:   http://localhost:9001  (minioadmin / minioadmin)
 
-  Login:
+  Giriş:
     admin@bakimevi.com   / Admin123!
     ahmet@bakimevi.com    / Calisan123!
 
-Now start:
+Şimdi başlat:
   corepack pnpm dev
 
-To stop:
+Durdurmak için:
   docker compose down
 ==================================================
 DONE

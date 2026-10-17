@@ -3,11 +3,11 @@ import { addMonths } from "./date.js";
 export type ExpiryStatus = "RED" | "YELLOW" | "GREEN";
 
 /**
- * Remaining-time color based on a document's expiry date.
- *  - null date   => null (no expiry)
- *  - expired / <= 1 month => RED
+ * Evrakın bitiş tarihine göre kalan-süre rengi.
+ *  - null tarih  => null (süresiz)
+ *  - dolmuş / <= 1 ay => RED
  *  - <= 3 ay => YELLOW
- *  - more => GREEN
+ *  - fazlası => GREEN
  */
 export function expiryStatus(expiresAt: Date | string | null | undefined): ExpiryStatus | null {
   if (!expiresAt) {
@@ -24,7 +24,7 @@ export function expiryStatus(expiresAt: Date | string | null | undefined): Expir
   return "GREEN";
 }
 
-/** Whole days left until expiry (negative = past). null date => null. */
+/** Bitişe kalan tam gün sayısı (negatif = geçmiş). null tarih => null. */
 export function daysUntilExpiry(expiresAt: Date | string | null | undefined): number | null {
   if (!expiresAt) {
     return null;
@@ -37,14 +37,14 @@ export function daysUntilExpiry(expiresAt: Date | string | null | undefined): nu
   return Math.round((startOfExpiry.getTime() - startOfToday.getTime()) / 86_400_000);
 }
 
-/** Human-readable remaining time: "3 months 12 days", "18 days", "expired 45 days ago", "No expiry". */
+/** İnsan-okur kalan süre metni: "3 ay 12 gün", "18 gün", "45 gün önce doldu", "No expiry". */
 export function remainingLabel(expiresAt: Date | string | null | undefined): string {
   const days = daysUntilExpiry(expiresAt);
   if (days === null) {
     return "No expiry";
   }
   if (days < 0) {
-    return `expired ${Math.abs(days)} days ago`;
+    return `Expired ${Math.abs(days)} days ago`;
   }
   if (days === 0) {
     return "Expires today";
@@ -54,5 +54,5 @@ export function remainingLabel(expiresAt: Date | string | null | undefined): str
   }
   const months = Math.floor(days / 30);
   const rest = days % 30;
-  return rest > 0 ? `${months} months ${rest} days left` : `${months} months left`;
+  return rest > 0 ? `${months} mo ${rest} days left` : `${months} months left`;
 }

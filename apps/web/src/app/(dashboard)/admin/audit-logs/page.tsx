@@ -11,7 +11,7 @@ const PAGE_SIZE = 50;
 
 const categoryMeta: Record<AuditCategory, { label: string; icon: LucideIcon; tone: string }> = {
   CARE: { label: "Care", icon: HeartHandshake, tone: "bg-green-100 text-green-700" },
-  PATIENT: { label: "Patient Record", icon: Users, tone: "bg-blue-100 text-blue-700" },
+  PATIENT: { label: "Resident Record", icon: Users, tone: "bg-blue-100 text-blue-700" },
   DOCUMENT: { label: "Document", icon: FileText, tone: "bg-amber-100 text-amber-700" },
   USER: { label: "Staff", icon: UserCog, tone: "bg-purple-100 text-purple-700" },
   LOGIN: { label: "Login/Logout", icon: LogIn, tone: "bg-slate-100 text-slate-600" },
@@ -74,8 +74,8 @@ export default function AuditLogsPage() {
     <div className="space-y-5">
       <div className="space-y-3 rounded-2xl border border-border bg-surface p-4">
         <div>
-          <h2 className="text-xl font-bold text-text">Activity Logs</h2>
-          <p className="text-sm text-muted">See who did what, and when, across the system.</p>
+          <h2 className="text-xl font-bold text-text">Activity Log</h2>
+          <p className="text-sm text-muted">See who did what in the system, and when.</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <select
@@ -117,7 +117,7 @@ export default function AuditLogsPage() {
                 resetPage();
               }}
             />
-            Only important actions (hide views and searches)
+            Important actions only (hide views and searches)
           </label>
         </div>
       </div>
@@ -126,7 +126,7 @@ export default function AuditLogsPage() {
         {query.isLoading ? (
           <p className="p-6 text-center text-sm text-muted">Loading…</p>
         ) : query.isError ? (
-          <p className="p-6 text-center text-sm text-danger">Could not load logs. Please refresh the page.</p>
+          <p className="p-6 text-center text-sm text-danger">Could not load records. Please refresh the page.</p>
         ) : logs.length === 0 ? (
           <p className="p-6 text-center text-sm text-muted">No records match these filters.</p>
         ) : (

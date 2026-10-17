@@ -166,7 +166,7 @@ export class PatientUpdateService {
       throw new NotFoundError("PATIENT_UPDATE_NOT_FOUND", "Update not found");
     }
     if (requester.role === "EMPLOYEE" && existing.employeeId !== requester.userId) {
-      throw new ForbiddenError("PATIENT_UPDATE_FORBIDDEN", "You can only edit your own updates");
+      throw new ForbiddenError("PATIENT_UPDATE_FORBIDDEN", "You can only change your own updates");
     }
     return existing;
   }

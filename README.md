@@ -1,34 +1,14 @@
-# CareCenter — Care Center Management System
+# BakımEvi — Bakım Merkezi Yönetim Sistemi
 
-In-house patient tracking and document management system for elderly and disability care facilities.
+Yaşlı ve engelli bireylere hizmet veren bakım merkezleri için şirket içi engelli takip ve evrak yönetim sistemi.
+In-house resident tracking and document management system for elderly/disability care facilities.
 
-Staff record daily care updates (medications, vital signs, observations, incidents), manage documents with priority and retention rules, and — optionally — generate an AI shift-handover summary. All sensitive personal data is encrypted at rest, every critical action is audit-logged, and no patient-identifying data ever leaves the API when the AI feature is used.
+## Dokümantasyon / Documentation
 
-## Documentation
-
-| Language | File |
+| Dil | Dosya |
 | --- | --- |
-| 🇬🇧 English | **[README.en.md](README.en.md)** |
 | 🇹🇷 Türkçe | **[README.tr.md](README.tr.md)** |
+| 🇬🇧 English | **[README.en.md](README.en.md)** |
 
-See the English file for setup, roles, the permission matrix, the API summary, and security notes.
-
-## Tech stack
-
-- **Frontend:** Next.js 14 (App Router), React 18, TypeScript, Tailwind CSS, TanStack Query, Zustand
-- **Backend:** Node.js 20, Express, Prisma, PostgreSQL, Redis
-- **Storage:** MinIO (S3-compatible), AES-256-GCM encryption for files and national IDs
-- **AI:** Pluggable LLM provider (local Ollama or Claude) with a fail-secure anonymization layer
-
-## Quick start
-
-```bash
-corepack pnpm install
-cp .env.example .env   # then fill in the secrets
-corepack pnpm generate:secrets
-corepack pnpm db:migrate
-corepack pnpm db:seed
-corepack pnpm dev
-```
-
-The web app runs on http://localhost:3000 and the API on http://localhost:3001.
+Kurulum, roller, yetki matrisi, API özeti ve güvenlik notları için ilgili dile ait dosyaya bakın.
+See the file for your language for setup, roles, the permission matrix, the API summary, and security notes.

@@ -24,7 +24,7 @@ describe("EncryptionService", () => {
     const encrypted = service.encryptFile(original);
     const tampered = Buffer.from("degistirilmis");
 
-    expect(() => service.verifyChecksum(tampered, encrypted.checksum)).toThrow("File integrity could not be verified");
+    expect(() => service.verifyChecksum(tampered, encrypted.checksum)).toThrow("File integrity check failed");
   });
 
   it("national ID encryption is deterministic", () => {

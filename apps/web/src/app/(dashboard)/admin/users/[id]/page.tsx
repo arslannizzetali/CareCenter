@@ -63,13 +63,13 @@ export default function EditUserPage() {
       return adminApi.updateUser(params.id, body);
     },
     onSuccess: () => {
-      toast.success("Staff member updated");
+      toast.success("Employee updated");
       void queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
       void queryClient.invalidateQueries({ queryKey: ["admin", "user", params.id] });
       router.push("/admin/users");
     },
     onError: (error) =>
-      toast.error(error instanceof ApiClientError ? error.message : "Could not update staff member")
+      toast.error(error instanceof ApiClientError ? error.message : "Could not update employee")
   });
 
   if (query.isLoading) {
@@ -85,15 +85,15 @@ export default function EditUserPage() {
       className="mx-auto max-w-3xl space-y-5 rounded-3xl border border-border bg-white p-6 shadow-sm"
     >
       <div>
-        <h2 className="text-xl font-bold text-text">Edit Staff Member</h2>
-        <p className="text-sm text-muted">Leave the password field empty to keep the current password.</p>
+        <h2 className="text-xl font-bold text-text">Edit Employee</h2>
+        <p className="text-sm text-muted">Leave the password empty to keep the current one.</p>
       </div>
       <div className="grid gap-4 md:grid-cols-2">
-        <Input label="First Name" value={form.firstName} onChange={(value) => setForm({ ...form, firstName: value })} />
-        <Input label="Last Name" value={form.lastName} onChange={(value) => setForm({ ...form, lastName: value })} />
+        <Input label="First name" value={form.firstName} onChange={(value) => setForm({ ...form, firstName: value })} />
+        <Input label="Last name" value={form.lastName} onChange={(value) => setForm({ ...form, lastName: value })} />
         <Input label="Email" type="email" value={form.email} onChange={(value) => setForm({ ...form, email: value })} />
         <Input
-          label="New Password (optional)"
+          label="New password (optional)"
           type="password"
           value={form.password}
           onChange={(value) => setForm({ ...form, password: value })}
@@ -115,7 +115,7 @@ export default function EditUserPage() {
             checked={form.isActive}
             onChange={(event) => setForm({ ...form, isActive: event.target.checked })}
           />
-          Aktif
+          Active
         </label>
       </div>
       <div className="flex gap-3">

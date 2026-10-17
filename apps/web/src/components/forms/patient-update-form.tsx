@@ -83,7 +83,7 @@ export function PatientUpdateForm({ patientId, update }: { patientId: string; up
         : patientApi.createUpdate(patientId, body);
     },
     onSuccess: () => {
-      toast.success(isEdit ? "Update saved" : "Patient update saved");
+      toast.success(isEdit ? "Update saved" : "Resident update saved");
       void queryClient.invalidateQueries({ queryKey: ["patient", patientId] });
       router.push(`/patients/${patientId}`);
     },
@@ -150,7 +150,7 @@ export function PatientUpdateForm({ patientId, update }: { patientId: string; up
 
       {updateType === "MEDICATION" ? (
         <section className="rounded-2xl border border-border bg-surface p-5">
-          <h3 className="mb-3 font-bold text-text">Medication Entry</h3>
+          <h3 className="mb-3 font-bold text-text">Medication</h3>
           <div className="grid gap-3 md:grid-cols-3">
             <input value={medicationName} onChange={(event) => setMedicationName(event.target.value)} className="focus-ring rounded-xl border border-border px-4 py-3" placeholder="Medication name" />
             <input value={medicationDosage} onChange={(event) => setMedicationDosage(event.target.value)} className="focus-ring rounded-xl border border-border px-4 py-3" placeholder="Dose" />
@@ -164,19 +164,19 @@ export function PatientUpdateForm({ patientId, update }: { patientId: string; up
           <h3 className="mb-3 font-bold text-text">Vital Signs</h3>
           <div className="grid gap-3 md:grid-cols-3">
             <input value={bloodPressure} onChange={(event) => setBloodPressure(event.target.value)} className="focus-ring rounded-xl border border-border px-4 py-3" placeholder="Blood pressure 120/80" />
-            <input value={heartRate} onChange={(event) => setHeartRate(event.target.value)} className="focus-ring rounded-xl border border-border px-4 py-3" placeholder="Heart rate" type="number" />
+            <input value={heartRate} onChange={(event) => setHeartRate(event.target.value)} className="focus-ring rounded-xl border border-border px-4 py-3" placeholder="Pulse" type="number" />
             <input value={temperature} onChange={(event) => setTemperature(event.target.value)} className="focus-ring rounded-xl border border-border px-4 py-3" placeholder="Temperature" type="number" step="0.1" />
           </div>
         </section>
       ) : null}
 
       <section>
-        <h3 className="mb-3 font-bold text-text">Patient Mood</h3>
+        <h3 className="mb-3 font-bold text-text">Resident Mood</h3>
         <div className="grid gap-3 md:grid-cols-3">
           {[
             ["GOOD", "Good", "bg-green-100 text-green-800 border-green-300"],
             ["MODERATE", "Moderate", "bg-yellow-100 text-yellow-800 border-yellow-300"],
-            ["BAD", "Poor", "bg-red-100 text-red-800 border-red-300"]
+            ["BAD", "Bad", "bg-red-100 text-red-800 border-red-300"]
           ].map(([value, label, classes]) => (
             <button
               key={value}
@@ -191,7 +191,7 @@ export function PatientUpdateForm({ patientId, update }: { patientId: string; up
       </section>
 
       <label className="flex items-center justify-between rounded-2xl border border-red-300 bg-red-50 p-5 text-red-800">
-        <span className="font-bold">Mark this update as an emergency</span>
+        <span className="font-bold">This update is an urgent notification</span>
         <input type="checkbox" checked={isUrgent} onChange={(event) => setIsUrgent(event.target.checked)} className="h-5 w-5" />
       </label>
 

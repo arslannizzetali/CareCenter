@@ -112,7 +112,7 @@ export function UpdateCard({
         <span className="rounded-full bg-surface px-3 py-1 text-muted">Mood: {moodLabel(update.patientMood)}</span>
         {update.patient ? (
           <span className="rounded-full bg-surface px-3 py-1 text-muted">
-            Patient: {update.patient.firstName} {update.patient.lastName}
+            Resident: {update.patient.firstName} {update.patient.lastName}
           </span>
         ) : null}
       </div>
@@ -127,5 +127,5 @@ function moodLabel(mood: PatientUpdate["patientMood"]): string {
   if (mood === "MODERATE") {
     return "Moderate";
   }
-  return "Poor";
+  return "Bad";
 }

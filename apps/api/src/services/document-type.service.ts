@@ -44,7 +44,7 @@ export class DocumentTypeService {
     if (!type) {
       throw new NotFoundError("DOCUMENT_TYPE_NOT_FOUND", "Document type not found");
     }
-    // If it's in use or a system type, don't delete — deactivate instead.
+    // Kullanımdaysa veya sistem türüyse silme, pasife al.
     if (type.isSystem || type._count.documents > 0) {
       await prisma.documentType.update({ where: { id }, data: { isActive: false } });
       return;

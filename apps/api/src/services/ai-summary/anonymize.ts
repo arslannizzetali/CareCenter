@@ -10,12 +10,12 @@ import { AppError } from "../../utils/errors.js";
 export const MAX_RECORDS = 200;
 const MAX_FIELD_LENGTH = 2000;
 
-export const PATIENT_PLACEHOLDER = "Patient";
+export const PATIENT_PLACEHOLDER = "Resident";
 const NAME_PLACEHOLDER = "[name]";
 const NUMBER_PLACEHOLDER = "[number]";
 const DATE_PLACEHOLDER = "[date]";
 
-/** Identity data of the patient. Used ONLY to find and mask it — never serialized. */
+/** Identity data of the Engelli. Used ONLY to find and mask it — never serialized. */
 export interface PatientIdentity {
   firstName: string;
   lastName: string;
@@ -41,7 +41,7 @@ export interface AnonymizeInput {
   patient: PatientIdentity;
   updates: AnonymizableUpdate[];
   hours: number;
-  /** Full names ("First Last") of every patient and staff member, masked wherever they appear in free text. */
+  /** Full names ("Ad Soyad") of every Engelli and staff member, masked wherever they appear in free text. */
   knownNames: string[];
 }
 
@@ -50,7 +50,7 @@ export class PiiDetectedError extends AppError {
     super(
       422,
       "AI_PII_BLOCKED",
-      "Personal data that could not be masked was detected in the records. The summary was not generated for security reasons."
+      "Personal data that could not be masked was found in the records. For safety, no summary was generated."
     );
   }
 }
@@ -64,7 +64,7 @@ const updateTypeLabels: Record<string, string> = {
   INCIDENT: "Incident/accident"
 };
 
-const moodLabels: Record<string, string> = { GOOD: "Good", MODERATE: "Moderate", BAD: "Poor" };
+const moodLabels: Record<string, string> = { GOOD: "Good", MODERATE: "Moderate", BAD: "Bad" };
 
 const medicationSchema = z.array(
   z.object({
@@ -84,7 +84,7 @@ const vitalSignsSchema = z.object({
   bloodSugar: z.number().optional()
 });
 
-// 10+ digits, optionally separated by spaces/dashes/parentheses: phone numbers, national IDs.
+// 10+ digits, optionally separated by spaces/dashes/parentheses: phone numbers, TC numbers.
 // Dots/slashes/colons are not separators, so dates, times and "120/80" survive.
 const LONG_NUMBER = /\+?\d(?:[\s\-()]*\d){9,}/g;
 const TC_LIKE = /(?<!\d)\d{11}(?!\d)/;
@@ -108,7 +108,7 @@ export function buildAnonymizedPrompt(input: AnonymizeInput): { text: string; re
   const header = [
     `${PATIENT_PLACEHOLDER} — Room: ${input.patient.roomNumber ? mask(input.patient.roomNumber) : "not specified"}`,
     `Time range: last ${input.hours} hours`,
-    `Record count: ${records.length}${truncated ? ` (only the most recent ${MAX_RECORDS} records)` : ""}`
+    `Record count: ${records.length}${truncated ? ` (only the newest ${MAX_RECORDS} records)` : ""}`
   ].join("\n");
 
   const body = chronological.map((update, index) => serializeUpdate(update, index + 1, mask)).join("\n");
@@ -122,7 +122,7 @@ export function buildAnonymizedPrompt(input: AnonymizeInput): { text: string; re
 
 /**
  * Last line of defence before data leaves the API: if any identity value or a
- * national-ID/phone-shaped number is still present, the request is refused (fail-secure).
+ * TC/phone-shaped number is still present, the request is refused (fail-secure).
  */
 export function assertNoPii(text: string, patient: PatientIdentity): void {
   if (TC_LIKE.test(text) || new RegExp(LONG_NUMBER.source).test(text)) {
@@ -166,9 +166,9 @@ function serializeUpdate(update: AnonymizableUpdate, index: number, mask: (value
     const v = vitals.data;
     const parts = [
       v.bloodPressure ? `BP ${mask(v.bloodPressure)}` : null,
-      v.heartRate !== undefined ? `HR ${v.heartRate}/min` : null,
+      v.heartRate !== undefined ? `Pulse ${v.heartRate}/min` : null,
       v.temperature !== undefined ? `Temp ${v.temperature}°C` : null,
-      v.oxygenSaturation !== undefined ? `SpO2 ${v.oxygenSaturation}%` : null,
+      v.oxygenSaturation !== undefined ? `SpO2 %${v.oxygenSaturation}` : null,
       v.weight !== undefined ? `Weight ${v.weight} kg` : null,
       v.bloodSugar !== undefined ? `Blood sugar ${v.bloodSugar} mg/dL` : null
     ].filter(Boolean);
@@ -190,7 +190,7 @@ function serializeUpdate(update: AnonymizableUpdate, index: number, mask: (value
 function createMasker(patient: PatientIdentity, knownNames: string[]): (value: string) => string {
   const patientTerms = [...nameParts(patient.firstName), ...nameParts(patient.lastName)];
   // Other people's names need 3+ letters: very short names ("Su", "Ay") are also common
-  // words and would garble the notes. The patient's own names are masked from 2 letters.
+  // words and would garble the notes. The Engelli's own names are masked from 2 letters.
   const otherTerms = [
     ...nameParts(patient.emergencyContactName),
     ...knownNames.flatMap((name) => nameParts(name, 3))
@@ -198,8 +198,8 @@ function createMasker(patient: PatientIdentity, knownNames: string[]): (value: s
     (term) => !patientTerms.includes(term)
   );
   // Full names are masked as one unit BEFORE single parts. Otherwise a staff member who
-  // shares the patient's surname ("Fatma Şahin" vs "Bülent Şahin") would come out as
-  // "[name] Patient" and the model could attribute her actions to the patient.
+  // shares the Engelli's surname ("Fatma Şahin" vs "Bülent Şahin") would come out as
+  // "[isim] Engelli" and the model could attribute her actions to the Engelli.
   const patientFullName = `${patient.firstName} ${patient.lastName}`;
   const patientKey = normalizeName(patientFullName);
   const otherFullNames = unique([patient.emergencyContactName, ...knownNames])
@@ -221,7 +221,7 @@ function createMasker(patient: PatientIdentity, knownNames: string[]): (value: s
     value = value.replace(patientFullPattern, PATIENT_PLACEHOLDER);
     for (const pattern of patientPatterns) value = value.replace(pattern, PATIENT_PLACEHOLDER);
     for (const pattern of otherPatterns) value = value.replace(pattern, NAME_PLACEHOLDER);
-    value = value.replace(/Patient(?:\s+Patient)+/g, PATIENT_PLACEHOLDER);
+    value = value.replace(/Resident(?:\s+Resident)+/g, PATIENT_PLACEHOLDER);
     // Records sit between <record> delimiters; free text must not be able to close them.
     return value.replace(/</g, "‹").replace(/>/g, "›").replace(/\s+/g, " ").trim();
   };

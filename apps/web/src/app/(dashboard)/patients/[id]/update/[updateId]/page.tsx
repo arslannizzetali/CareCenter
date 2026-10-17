@@ -20,14 +20,14 @@ export default function EditPatientUpdatePage() {
     <div className="mx-auto max-w-5xl space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-text">Edit Update</h2>
-        <p className="text-muted">Modify the saved update details.</p>
+        <p className="text-muted">Change the details of a saved update.</p>
       </div>
 
       {query.isLoading ? <div className="h-96 animate-pulse rounded-3xl bg-surface" /> : null}
 
       {!query.isLoading && !update ? (
         <div className="rounded-2xl border border-border bg-surface p-6 text-muted">
-          Update not found or you don't have permission to edit it.{" "}
+          Update not found, or you are not allowed to edit it.{" "}
           <Link href={`/patients/${params.id}`} className="font-semibold text-primary">
             Go back
           </Link>

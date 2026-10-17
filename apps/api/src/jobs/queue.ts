@@ -39,6 +39,6 @@ export function registerQueues(): void {
     }
   );
 
-  // Scan once on server startup so past uploads also generate notifications.
+  // Sunucu açılışında bir kez tara ki geçmiş yüklemeler de bildirim üretsin.
   void documentExpiryQueue.add({}, { removeOnComplete: true, removeOnFail: true });
 }

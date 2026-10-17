@@ -7,7 +7,7 @@ const inter = Inter({ subsets: ["latin-ext"] });
 
 export const metadata: Metadata = {
   title: "CareCenter Management System",
-  description: "Internal management system for a disability and elderly care center"
+  description: "In-house management system for disability and elderly care facilities"
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

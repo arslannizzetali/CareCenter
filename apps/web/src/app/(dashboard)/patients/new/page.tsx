@@ -27,7 +27,7 @@ export default function NewPatientPage() {
     dietaryNeeds: "",
     emergencyContactName: "",
     emergencyContactPhone: "05321234567",
-    emergencyContactRelation: "Aile",
+    emergencyContactRelation: "Family",
     notes: ""
   });
 
@@ -39,7 +39,7 @@ export default function NewPatientPage() {
         disabilityType: form.disabilityType || undefined
       }),
     onSuccess: (patient) => {
-      toast.success("Patient saved");
+      toast.success("Resident saved");
       router.push(`/patients/${patient.id}`);
     },
     onError: (error) => toast.error(formatPatientError(error))
@@ -54,12 +54,12 @@ export default function NewPatientPage() {
       className="mx-auto max-w-5xl space-y-5 rounded-3xl border border-border bg-white p-6 shadow-sm"
     >
       <div>
-        <h2 className="text-xl font-bold text-text">New Patient</h2>
-        <p className="text-sm text-muted">If a national ID is entered, it is stored encrypted on the API side.</p>
+        <h2 className="text-xl font-bold text-text">New Resident</h2>
+        <p className="text-sm text-muted">If a national ID is entered, it is stored encrypted by the API.</p>
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         <Input
-          label="First Name"
+          label="First name"
           value={form.firstName}
           onChange={(value) => setForm({ ...form, firstName: value })}
           required
@@ -69,7 +69,7 @@ export default function NewPatientPage() {
           title="Use only letters, spaces, apostrophes and hyphens"
         />
         <Input
-          label="Last Name"
+          label="Last name"
           value={form.lastName}
           onChange={(value) => setForm({ ...form, lastName: value })}
           required
@@ -121,7 +121,7 @@ export default function NewPatientPage() {
           required
           inputMode="tel"
           pattern="(\\+90|0)?[1-9][0-9]{9}"
-          title="Enter the phone in 05321234567, 5321234567 or +905321234567 format"
+          title="Enter the phone as 05321234567, 5321234567 or +905321234567"
         />
       </div>
       <Input label="Allergies" value={form.allergies} onChange={(value) => setForm({ ...form, allergies: value })} maxLength={5000} />
@@ -141,8 +141,8 @@ export default function NewPatientPage() {
 const turkishNamePattern = "[a-zA-ZçğıöşüÇĞİÖŞÜ\\s'-]+";
 
 const fieldLabels: Record<string, string> = {
-  firstName: "First Name",
-  lastName: "Last Name",
+  firstName: "First name",
+  lastName: "Last name",
   birthDate: "Date of birth",
   gender: "Gender",
   tcNumber: "National ID",
@@ -164,7 +164,7 @@ function formatPatientError(error: unknown): string {
     if (!firstDetail) {
       return error.message;
     }
-    const label = firstDetail.field ? fieldLabels[firstDetail.field] ?? firstDetail.field : "Alan";
+    const label = firstDetail.field ? fieldLabels[firstDetail.field] ?? firstDetail.field : "Field";
     const message = firstDetail.message === "Invalid" ? "is not valid" : firstDetail.message;
     return `${label}: ${message}`;
   }
@@ -173,7 +173,7 @@ function formatPatientError(error: unknown): string {
     return error.message;
   }
 
-  return "Could not save patient";
+  return "Could not save resident";
 }
 
 function Input({

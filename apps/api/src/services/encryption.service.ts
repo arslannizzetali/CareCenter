@@ -65,7 +65,7 @@ export class EncryptionService {
   verifyChecksum(buffer: Buffer, expectedChecksum: string): void {
     const actual = crypto.createHash("sha256").update(buffer).digest("hex");
     if (actual !== expectedChecksum) {
-      throw new BadRequestError("CHECKSUM_MISMATCH", "File integrity could not be verified");
+      throw new BadRequestError("CHECKSUM_MISMATCH", "File integrity check failed");
     }
   }
 

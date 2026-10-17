@@ -24,7 +24,7 @@ export class UnauthorizedError extends AppError {
 }
 
 export class ForbiddenError extends AppError {
-  constructor(code = "FORBIDDEN", message = "You don't have permission for this action", details?: unknown) {
+  constructor(code = "FORBIDDEN", message = "You are not allowed to perform this action", details?: unknown) {
     super(403, code, message, details);
   }
 }
@@ -43,6 +43,6 @@ export class ConflictError extends AppError {
 
 export class ValidationError extends AppError {
   constructor(details: unknown) {
-    super(422, "VALIDATION_ERROR", "The provided information is invalid", details);
+    super(422, "VALIDATION_ERROR", "The submitted data is invalid", details);
   }
 }
