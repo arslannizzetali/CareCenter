@@ -45,10 +45,20 @@ enum PatientMood {
   BAD
 }
 
+enum DisabilityType {
+  PHYSICAL
+  MENTAL
+  BOTH
+}
+
 enum DocumentPriority {
   RED
   YELLOW
   GREEN
+}
+
+enum NotificationType {
+  DOCUMENT_EXPIRING
 }
 
 model User {
@@ -84,6 +94,7 @@ model Patient {
   gender                   String          @db.VarChar(10)
   tcNumberEncrypted        String?         @map("tc_number_encrypted")
   careType                 CareType        @map("care_type")
+  disabilityType           DisabilityType? @map("disability_type")
   roomNumber               String?         @map("room_number") @db.VarChar(20)
   admissionDate            DateTime        @map("admission_date")
   status                   PatientStatus   @default(ACTIVE)
@@ -107,6 +118,8 @@ model Patient {
   @@index([firstName, lastName])
   @@index([status])
   @@index([careType])
+  @@index([disabilityType])
+  @@index([birthDate])
   @@index([roomNumber])
   @@map("patients")
 }
@@ -134,10 +147,25 @@ model PatientUpdate {
   @@map("patient_updates")
 }
 
+model DocumentType {
+  id        String     @id @default(uuid())
+  name      String     @unique @db.VarChar(120)
+  isSystem  Boolean    @default(false) @map("is_system")
+  isActive  Boolean    @default(true) @map("is_active")
+  sortOrder Int        @default(0) @map("sort_order")
+  createdAt DateTime   @default(now()) @map("created_at")
+  documents Document[]
+
+  @@index([isActive, sortOrder])
+  @@map("document_types")
+}
+
 model Document {
   id             String           @id @default(uuid())
   patientId      String           @map("patient_id")
   patient        Patient          @relation(fields: [patientId], references: [id])
+  documentTypeId String?          @map("document_type_id")
+  documentType   DocumentType?    @relation(fields: [documentTypeId], references: [id])
   uploadedById   String           @map("uploaded_by_id")
   uploadedBy     User             @relation(fields: [uploadedById], references: [id])
   fileName       String           @map("file_name") @db.VarChar(255)
@@ -145,6 +173,7 @@ model Document {
   fileSize       BigInt           @map("file_size")
   mimeType       String           @map("mime_type") @db.VarChar(100)
   priority       DocumentPriority
+  expiresAt      DateTime?        @map("expires_at")
   encryptionKey  String           @map("encryption_key")
   checksum       String           @db.VarChar(64)
   isDeleted      Boolean          @default(false) @map("is_deleted")
@@ -155,6 +184,8 @@ model Document {
   @@index([patientId, isDeleted])
   @@index([uploadedById])
   @@index([priority])
+  @@index([expiresAt])
+  @@index([documentTypeId])
   @@map("documents")
 }
 
@@ -185,6 +216,23 @@ model AuditLog {
   @@index([action])
   @@index([performedAt(sort: Desc)])
   @@map("audit_logs")
+}
+
+model Notification {
+  id         String           @id @default(uuid())
+  type       NotificationType
+  title      String           @db.VarChar(200)
+  body       String           @db.Text
+  patientId  String?          @map("patient_id")
+  documentId String?          @map("document_id")
+  isRead     Boolean          @default(false) @map("is_read")
+  createdAt  DateTime         @default(now()) @map("created_at")
+  readAt     DateTime?        @map("read_at")
+
+  @@unique([type, documentId])
+  @@index([isRead, createdAt(sort: Desc)])
+  @@index([patientId])
+  @@map("notifications")
 }
 
 model DemoRequest {

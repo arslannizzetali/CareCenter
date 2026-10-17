@@ -13,7 +13,16 @@ export class DocumentController {
       }
       created(
         res,
-        await documentService.upload(routeId(req), req.file, req.body.priority as DocumentPriority, requester(req))
+        await documentService.upload(
+          routeId(req),
+          req.file,
+          req.body.priority as DocumentPriority,
+          {
+            expiresAt: req.body.expiresAt as Date | undefined,
+            documentTypeId: req.body.documentTypeId as string | undefined
+          },
+          requester(req)
+        )
       );
     } catch (error) {
       next(error);
@@ -23,6 +32,30 @@ export class DocumentController {
   listForPatient = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       ok(res, await documentService.listForPatient(routeId(req), requester(req)));
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  typeStatusForPatient = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      ok(res, await documentService.typeStatusForPatient(routeId(req), requester(req)));
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  matrix = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      ok(res, await documentService.matrix(req.query, requester(req)));
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  updateMeta = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      ok(res, await documentService.updateMeta(routeId(req), req.body, requester(req)));
     } catch (error) {
       next(error);
     }

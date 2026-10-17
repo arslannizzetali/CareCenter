@@ -46,6 +46,14 @@ export class UserController {
       next(error);
     }
   };
+
+  restore = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      ok(res, await userService.restore(routeId(req), requestContext(req)));
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export const userController = new UserController();

@@ -26,7 +26,7 @@ export const uploadSingleDocument = multer({
     const ext = path.extname(file.originalname).toLowerCase();
     const allowedMimes = allowedMimeByExtension.get(ext);
     if (!allowedMimes || !allowedMimes.includes(file.mimetype)) {
-      callback(new BadRequestError("UNSUPPORTED_FILE_TYPE", "Desteklenmeyen dosya türü"));
+      callback(new BadRequestError("UNSUPPORTED_FILE_TYPE", "Unsupported file type"));
       return;
     }
     callback(null, true);
@@ -53,7 +53,7 @@ export function makeStoredFileName(originalName: string): string {
 
 function assertMagicBytes(buffer: Buffer, mimeType: string): void {
   if (buffer.length < 4) {
-    throw new BadRequestError("INVALID_FILE", "Dosya içeriği geçersiz");
+    throw new BadRequestError("INVALID_FILE", "Invalid file content");
   }
 
   const isValid =
@@ -70,6 +70,6 @@ function assertMagicBytes(buffer: Buffer, mimeType: string): void {
       buffer.subarray(0, 2).toString("ascii") === "PK");
 
   if (!isValid) {
-    throw new BadRequestError("INVALID_FILE_SIGNATURE", "Dosya içeriği uzantı ile eşleşmiyor");
+    throw new BadRequestError("INVALID_FILE_SIGNATURE", "File content does not match its extension");
   }
 }

@@ -17,7 +17,7 @@ export async function authenticate(req: Request, _res: Response, next: NextFunct
   try {
     const token = extractBearerToken(req);
     if (!token) {
-      throw new UnauthorizedError("UNAUTHORIZED", "Giriş yapmalısınız");
+      throw new UnauthorizedError("UNAUTHORIZED", "You must sign in");
     }
 
     const payload = jwt.verify(token, env.JWT_SECRET, {
@@ -27,12 +27,12 @@ export async function authenticate(req: Request, _res: Response, next: NextFunct
     }) as AccessTokenPayload;
 
     if (!payload.sub || !payload.jti || typeof payload.exp !== "number") {
-      throw new UnauthorizedError("INVALID_TOKEN", "Oturum geçersiz");
+      throw new UnauthorizedError("INVALID_TOKEN", "Invalid session");
     }
 
     const blacklisted = await redis.get(`blacklist:access:${payload.jti}`);
     if (blacklisted) {
-      throw new UnauthorizedError("TOKEN_REVOKED", "Oturum sonlandırılmış");
+      throw new UnauthorizedError("TOKEN_REVOKED", "Session has been revoked");
     }
 
     const user = await prisma.user.findFirst({
@@ -41,7 +41,7 @@ export async function authenticate(req: Request, _res: Response, next: NextFunct
     });
 
     if (!user) {
-      throw new UnauthorizedError("USER_INACTIVE", "Kullanıcı aktif değil");
+      throw new UnauthorizedError("USER_INACTIVE", "User is not active");
     }
 
     req.user = {
@@ -56,7 +56,7 @@ export async function authenticate(req: Request, _res: Response, next: NextFunct
       next(error);
       return;
     }
-    next(new UnauthorizedError("INVALID_TOKEN", "Oturum geçersiz"));
+    next(new UnauthorizedError("INVALID_TOKEN", "Invalid session"));
   }
 }
 

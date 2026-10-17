@@ -10,7 +10,7 @@ export function requireRole(...allowedRoles: Role[]) {
     }
 
     if (!allowedRoles.includes(req.user.role)) {
-      next(new ForbiddenError("FORBIDDEN", "Bu işlem için yetkiniz yok"));
+      next(new ForbiddenError("FORBIDDEN", "You are not allowed to perform this action"));
       return;
     }
 

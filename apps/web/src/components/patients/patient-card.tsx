@@ -19,7 +19,7 @@ export function PatientCard({ patient }: { patient: Patient }) {
               {patient.firstName} {patient.lastName}
             </h2>
             <p className="text-sm text-muted">
-              {age(patient.birthDate)} yaş | {careTypeLabel(patient.careType)}
+              Age {age(patient.birthDate)} | {careTypeLabel(patient.careType)}
             </p>
           </div>
         </div>
@@ -30,23 +30,23 @@ export function PatientCard({ patient }: { patient: Patient }) {
 
       <div className="mb-4 grid grid-cols-2 gap-3 text-sm">
         <div className="rounded-xl bg-surface p-3">
-          <p className="text-xs text-muted">Oda</p>
+          <p className="text-xs text-muted">Room</p>
           <p className="font-semibold text-text">{patient.roomNumber ?? "-"}</p>
         </div>
         <div className="rounded-xl bg-surface p-3">
-          <p className="text-xs text-muted">Son güncelleme</p>
-          <p className="font-semibold text-text">{latest ? fromNow(latest) : "Yok"}</p>
+          <p className="text-xs text-muted">Last update</p>
+          <p className="font-semibold text-text">{latest ? fromNow(latest) : "None"}</p>
         </div>
       </div>
 
       <div className="mb-4 flex gap-2 text-xs font-semibold">
-        <span className="rounded-full bg-red-50 px-3 py-1 text-red-800">🔴 {patient.documentCounts?.red ?? 0} evrak</span>
-        <span className="rounded-full bg-yellow-50 px-3 py-1 text-yellow-800">🟡 {patient.documentCounts?.yellow ?? 0} evrak</span>
-        <span className="rounded-full bg-green-50 px-3 py-1 text-green-800">🟢 {patient.documentCounts?.green ?? 0} evrak</span>
+        <span className="rounded-full bg-red-50 px-3 py-1 text-red-800">🔴 {patient.documentCounts?.red ?? 0} docs</span>
+        <span className="rounded-full bg-yellow-50 px-3 py-1 text-yellow-800">🟡 {patient.documentCounts?.yellow ?? 0} docs</span>
+        <span className="rounded-full bg-green-50 px-3 py-1 text-green-800">🟢 {patient.documentCounts?.green ?? 0} docs</span>
       </div>
 
       <Link href={`/patients/${patient.id}`} className="inline-flex items-center gap-2 font-semibold text-primary">
-        Detay <ChevronRight className="h-4 w-4" />
+        Details <ChevronRight className="h-4 w-4" />
       </Link>
     </article>
   );
@@ -64,22 +64,22 @@ function age(birthDate: string): number {
 
 function careTypeLabel(value: Patient["careType"]): string {
   if (value === "ELDERLY") {
-    return "Yaşlı";
+    return "Elderly";
   }
   if (value === "DISABLED") {
-    return "Engelli";
+    return "Physically Disabled";
   }
-  return "Her ikisi";
+  return "Both";
 }
 
 function statusLabel(value: Patient["status"]): string {
   if (value === "ACTIVE") {
-    return "Aktif";
+    return "Active";
   }
   if (value === "DISCHARGED") {
-    return "Taburcu";
+    return "Discharged";
   }
-  return "Transfer";
+  return "Transferred";
 }
 
 function statusClass(value: Patient["status"]): string {

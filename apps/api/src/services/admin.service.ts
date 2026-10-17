@@ -1,9 +1,11 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "../config/database.js";
 import { auditService } from "./audit.service.js";
+import { AUDIT_CATEGORY_ACTIONS, ROUTINE_AUDIT_ACTIONS, describeAuditLogs, type AuditCategory } from "./audit-describe.js";
 import { patientService, type PatientQuery } from "./patient.service.js";
 import { patientUpdateService, type RecentUpdatesQuery, type Requester } from "./patient-update.service.js";
 import { getPagination, makePagination } from "../utils/pagination.js";
+import { yearsAgo } from "../utils/date.js";
 
 export interface AuditQuery {
   page?: number;
@@ -11,6 +13,8 @@ export interface AuditQuery {
   userId?: string;
   action?: string;
   resourceType?: string;
+  category?: AuditCategory;
+  importantOnly?: boolean;
   dateFrom?: Date;
   dateTo?: Date;
 }
@@ -19,16 +23,35 @@ export class AdminService {
   async dashboardStats() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const age65Cutoff = yearsAgo(65);
+    const activeWhere: Prisma.PatientWhereInput = { status: "ACTIVE", deletedAt: null };
 
-    const [activePatients, activeEmployees, todayUpdates, urgentUpdates, redDocuments, yellowDocuments, greenDocuments] =
-      await prisma.$transaction([
-      prisma.patient.count({ where: { status: "ACTIVE", deletedAt: null } }),
+    const [
+      activePatients,
+      activeEmployees,
+      todayUpdates,
+      urgentUpdates,
+      redDocuments,
+      yellowDocuments,
+      greenDocuments,
+      over65,
+      under65,
+      physicalDisabled,
+      mentalDisabled,
+      unreadNotifications
+    ] = await prisma.$transaction([
+      prisma.patient.count({ where: activeWhere }),
       prisma.user.count({ where: { role: "EMPLOYEE", isActive: true, deletedAt: null } }),
       prisma.patientUpdate.count({ where: { createdAt: { gte: today } } }),
       prisma.patientUpdate.count({ where: { isUrgent: true } }),
       prisma.document.count({ where: { isDeleted: false, priority: "RED" } }),
       prisma.document.count({ where: { isDeleted: false, priority: "YELLOW" } }),
-      prisma.document.count({ where: { isDeleted: false, priority: "GREEN" } })
+      prisma.document.count({ where: { isDeleted: false, priority: "GREEN" } }),
+      prisma.patient.count({ where: { ...activeWhere, birthDate: { lte: age65Cutoff } } }),
+      prisma.patient.count({ where: { ...activeWhere, birthDate: { gt: age65Cutoff } } }),
+      prisma.patient.count({ where: { ...activeWhere, disabilityType: { in: ["PHYSICAL", "BOTH"] } } }),
+      prisma.patient.count({ where: { ...activeWhere, disabilityType: { in: ["MENTAL", "BOTH"] } } }),
+      prisma.notification.count({ where: { isRead: false } })
     ]);
 
     return {
@@ -40,7 +63,10 @@ export class AdminService {
       },
       todayUpdates,
       activeEmployees,
-      urgentUpdates
+      urgentUpdates,
+      ageBreakdown: { over65, under65 },
+      disabilityBreakdown: { physical: physicalDisabled, mental: mentalDisabled },
+      unreadNotifications
     };
   }
 
@@ -52,11 +78,31 @@ export class AdminService {
     return patientService.list(query, requester);
   }
 
+  async deletedPatients(query: { page?: number; limit?: number; search?: string }) {
+    return patientService.listDeleted(query);
+  }
+
+  async restorePatient(id: string, requester: Requester) {
+    return patientService.restore(id, requester);
+  }
+
+  async purgePatient(id: string, requester: Requester) {
+    return patientService.hardDelete(id, requester);
+  }
+
   async auditLogs(query: AuditQuery) {
     const pagination = getPagination(query);
     const where: Prisma.AuditLogWhereInput = {
       ...(query.userId ? { userId: query.userId } : {}),
       ...(query.action ? { action: query.action } : {}),
+      ...(query.category || query.importantOnly
+        ? {
+            AND: [
+              ...(query.category ? [{ action: { in: AUDIT_CATEGORY_ACTIONS[query.category] } }] : []),
+              ...(query.importantOnly ? [{ action: { notIn: ROUTINE_AUDIT_ACTIONS } }] : [])
+            ]
+          }
+        : {}),
       ...(query.resourceType ? { resourceType: query.resourceType } : {}),
       ...(query.dateFrom || query.dateTo
         ? {
@@ -75,12 +121,12 @@ export class AdminService {
         skip: pagination.skip,
         take: pagination.take,
         orderBy: { performedAt: "desc" },
-        include: { user: { select: { id: true, firstName: true, lastName: true, email: true } } }
+        include: { user: { select: { id: true, firstName: true, lastName: true, email: true, role: true } } }
       })
     ]);
 
     return {
-      data: logs,
+      data: await describeAuditLogs(logs),
       pagination: makePagination(total, pagination.page, pagination.limit)
     };
   }

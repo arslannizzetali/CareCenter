@@ -11,15 +11,19 @@ export default function PatientsPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [careType, setCareType] = useState("");
+  const [ageGroup, setAgeGroup] = useState("");
+  const [disabilityType, setDisabilityType] = useState("");
   const deferredSearch = useDeferredValue(search);
 
   const patientsQuery = useQuery({
-    queryKey: ["patients", deferredSearch, status, careType],
+    queryKey: ["patients", deferredSearch, status, careType, ageGroup, disabilityType],
     queryFn: () =>
       patientApi.list({
         search: deferredSearch,
         status: status || undefined,
         careType: careType || undefined,
+        ageGroup: ageGroup || undefined,
+        disabilityType: disabilityType || undefined,
         limit: 30
       })
   });
@@ -27,13 +31,13 @@ export default function PatientsPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold text-text">Hastalar</h1>
+        <h1 className="text-2xl font-bold text-text">Residents</h1>
         <Link
           href="/patients/new"
           className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800"
         >
           <Plus className="h-4 w-4" />
-          Yeni Hasta
+          New Resident
         </Link>
       </div>
       <section className="rounded-3xl border border-border bg-surface p-5">
@@ -42,20 +46,22 @@ export default function PatientsPage() {
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Hasta adı, soyad veya oda numarası ile ara..."
+            placeholder="Search by first name, last name, room or national ID (11 digits)..."
             className="focus-ring w-full rounded-2xl border border-border bg-white py-4 pl-12 pr-4 text-lg"
           />
         </div>
-        <div className="mt-4 flex flex-wrap gap-3">
-          <Filter value={status} setValue={setStatus} options={[["", "Tümü"], ["ACTIVE", "Aktif"], ["DISCHARGED", "Taburcu"], ["TRANSFERRED", "Transfer"]]} />
-          <Filter value={careType} setValue={setCareType} options={[["", "Tümü"], ["ELDERLY", "Yaşlı"], ["DISABLED", "Engelli"], ["BOTH", "Her İkisi"]]} />
+        <div className="mt-4 space-y-2">
+          <Filter value={status} setValue={setStatus} options={[["", "All"], ["ACTIVE", "Active"], ["DISCHARGED", "Discharged"], ["TRANSFERRED", "Transferred"]]} />
+          <Filter value={careType} setValue={setCareType} options={[["", "All"], ["ELDERLY", "Elderly"], ["DISABLED", "Physically Disabled"], ["BOTH", "Both"]]} />
+          <Filter value={ageGroup} setValue={setAgeGroup} options={[["", "All ages"], ["UNDER_65", "Under 65"], ["OVER_65", "65 and over"]]} />
+          <Filter value={disabilityType} setValue={setDisabilityType} options={[["", "All disability types"], ["PHYSICAL", "Physical"], ["MENTAL", "Mental"], ["BOTH", "Both"]]} />
         </div>
       </section>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {patientsQuery.data?.map((patient) => <PatientCard key={patient.id} patient={patient} />)}
       </section>
-      {!patientsQuery.data?.length ? <p className="rounded-2xl bg-surface p-6 text-center text-muted">Hasta bulunamadı.</p> : null}
+      {!patientsQuery.data?.length ? <p className="rounded-2xl bg-surface p-6 text-center text-muted">No residents found.</p> : null}
     </div>
   );
 }

@@ -18,13 +18,13 @@ export class BadRequestError extends AppError {
 }
 
 export class UnauthorizedError extends AppError {
-  constructor(code = "UNAUTHORIZED", message = "Giriş yapmalısınız", details?: unknown) {
+  constructor(code = "UNAUTHORIZED", message = "You must sign in", details?: unknown) {
     super(401, code, message, details);
   }
 }
 
 export class ForbiddenError extends AppError {
-  constructor(code = "FORBIDDEN", message = "Bu işlem için yetkiniz yok", details?: unknown) {
+  constructor(code = "FORBIDDEN", message = "You are not allowed to perform this action", details?: unknown) {
     super(403, code, message, details);
   }
 }
@@ -43,6 +43,6 @@ export class ConflictError extends AppError {
 
 export class ValidationError extends AppError {
   constructor(details: unknown) {
-    super(422, "VALIDATION_ERROR", "Girilen bilgiler hatalı", details);
+    super(422, "VALIDATION_ERROR", "The submitted data is invalid", details);
   }
 }

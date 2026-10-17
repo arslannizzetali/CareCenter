@@ -1,5 +1,6 @@
 export type Role = "ADMIN" | "EMPLOYEE";
 export type CareType = "ELDERLY" | "DISABLED" | "BOTH";
+export type DisabilityType = "PHYSICAL" | "MENTAL" | "BOTH";
 export type PatientStatus = "ACTIVE" | "DISCHARGED" | "TRANSFERRED";
 export type MobilityLevel = "INDEPENDENT" | "ASSISTED" | "BEDRIDDEN";
 export type UpdateType =

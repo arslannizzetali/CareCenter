@@ -11,6 +11,9 @@ export const patientApi = {
   update: (id: string, body: unknown) => api.patch<Patient>(`/patients/${id}`, body),
   delete: (id: string) => api.delete<void>(`/patients/${id}`),
   createUpdate: (id: string, body: unknown) => api.post<PatientUpdate>(`/patients/${id}/updates`, body),
+  updateUpdate: (id: string, updateId: string, body: unknown) =>
+    api.patch<PatientUpdate>(`/patients/${id}/updates/${updateId}`, body),
+  deleteUpdate: (id: string, updateId: string) => api.delete<void>(`/patients/${id}/updates/${updateId}`),
   updates: (id: string, params?: Record<string, string | number | boolean | undefined>) =>
     api.get<PatientUpdate[]>(`/patients/${id}/updates${buildQuery(params)}`),
   documents: (id: string) =>

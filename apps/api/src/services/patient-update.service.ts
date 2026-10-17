@@ -1,8 +1,9 @@
 import type { PatientMood, Prisma, UpdateType } from "@prisma/client";
-import type { CreatePatientUpdateInput } from "@bakimevi/validation";
+import type { CreatePatientUpdateInput, UpdatePatientUpdateInput } from "@bakimevi/validation";
 import { prisma } from "../config/database.js";
 import { auditService } from "./audit.service.js";
 import { patientService } from "./patient.service.js";
+import { ForbiddenError, NotFoundError } from "../utils/errors.js";
 import { getPagination, makePagination } from "../utils/pagination.js";
 import { omitUndefined } from "../utils/object.js";
 import type { RequestContext } from "./user.service.js";
@@ -100,6 +101,74 @@ export class PatientUpdateService {
       data: updates,
       pagination: makePagination(total, pagination.page, pagination.limit)
     };
+  }
+
+  async update(updateId: string, input: UpdatePatientUpdateInput, requester: Requester) {
+    const existing = await this.ensureManageable(updateId, requester);
+
+    const data = omitUndefined({
+      updateType: input.updateType as UpdateType | undefined,
+      content: input.content,
+      medicationsGiven: input.medicationsGiven
+        ? input.medicationsGiven.map((medication) => ({
+            ...medication,
+            givenAt: medication.givenAt.toISOString()
+          }))
+        : undefined,
+      vitalSigns: input.vitalSigns as Prisma.InputJsonValue | undefined,
+      carePerformed: input.carePerformed,
+      patientMood: input.patientMood as PatientMood | undefined,
+      nextActionRequired: input.nextActionRequired,
+      isUrgent: input.isUrgent
+    }) as Prisma.PatientUpdateUncheckedUpdateInput;
+
+    const updated = await prisma.patientUpdate.update({
+      where: { id: updateId },
+      data,
+      include: updateInclude
+    });
+
+    await auditService.write({
+      userId: requester.userId,
+      action: "PATIENT_UPDATE_EDITED",
+      resourceType: "PatientUpdate",
+      resourceId: updateId,
+      metadata: { patientId: existing.patientId, changedFields: Object.keys(input) },
+      ipAddress: requester.ipAddress,
+      userAgent: requester.userAgent
+    });
+
+    return updated;
+  }
+
+  async remove(updateId: string, requester: Requester): Promise<void> {
+    const existing = await this.ensureManageable(updateId, requester);
+
+    await prisma.patientUpdate.delete({ where: { id: updateId } });
+
+    await auditService.write({
+      userId: requester.userId,
+      action: "PATIENT_UPDATE_DELETED",
+      resourceType: "PatientUpdate",
+      resourceId: updateId,
+      metadata: { patientId: existing.patientId },
+      ipAddress: requester.ipAddress,
+      userAgent: requester.userAgent
+    });
+  }
+
+  private async ensureManageable(updateId: string, requester: Requester) {
+    const existing = await prisma.patientUpdate.findUnique({
+      where: { id: updateId },
+      select: { id: true, patientId: true, employeeId: true }
+    });
+    if (!existing) {
+      throw new NotFoundError("PATIENT_UPDATE_NOT_FOUND", "Update not found");
+    }
+    if (requester.role === "EMPLOYEE" && existing.employeeId !== requester.userId) {
+      throw new ForbiddenError("PATIENT_UPDATE_FORBIDDEN", "You can only change your own updates");
+    }
+    return existing;
   }
 
   async recent(query: RecentUpdatesQuery, requester: Requester) {

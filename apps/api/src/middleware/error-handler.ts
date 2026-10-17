@@ -29,19 +29,19 @@ function normalizeError(error: unknown): AppError {
   }
 
   if (error instanceof Error) {
-    return new AppError(500, "INTERNAL_SERVER_ERROR", "Beklenmeyen bir hata oluştu", {
+    return new AppError(500, "INTERNAL_SERVER_ERROR", "An unexpected error occurred", {
       originalMessage: error.message,
       stack: error.stack
     });
   }
 
-  return new AppError(500, "INTERNAL_SERVER_ERROR", "Beklenmeyen bir hata oluştu");
+  return new AppError(500, "INTERNAL_SERVER_ERROR", "An unexpected error occurred");
 }
 
 function uploadMessage(error: multer.MulterError): string {
   if (error.code === "LIMIT_FILE_SIZE") {
-    return "Dosya boyutu 50MB sınırını aşıyor";
+    return "File size exceeds the 50MB limit";
   }
 
-  return "Dosya yükleme hatası";
+  return "File upload error";
 }

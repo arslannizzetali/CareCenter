@@ -54,7 +54,7 @@ export class EncryptionService {
   verifyChecksum(buffer: Buffer, expectedChecksum: string): void {
     const actual = crypto.createHash("sha256").update(buffer).digest("hex");
     if (actual !== expectedChecksum) {
-      throw new BadRequestError("CHECKSUM_MISMATCH", "Dosya bütünlüğü doğrulanamadı");
+      throw new BadRequestError("CHECKSUM_MISMATCH", "File integrity check failed");
     }
   }
 
@@ -124,7 +124,7 @@ export class EncryptionService {
   private parseDeterministicCipherText(encrypted: string): DeterministicCipherText {
     const parsed = JSON.parse(encrypted) as Partial<DeterministicCipherText>;
     if (!parsed.data || !parsed.authTag) {
-      throw new BadRequestError("INVALID_ENCRYPTED_VALUE", "Şifreli veri geçersiz");
+      throw new BadRequestError("INVALID_ENCRYPTED_VALUE", "Invalid encrypted value");
     }
     return {
       data: parsed.data,

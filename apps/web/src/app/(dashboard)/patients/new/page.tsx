@@ -16,6 +16,7 @@ export default function NewPatientPage() {
     gender: "MALE",
     tcNumber: "",
     careType: "ELDERLY",
+    disabilityType: "",
     roomNumber: "",
     admissionDate: new Date().toISOString().slice(0, 10),
     status: "ACTIVE",
@@ -26,14 +27,19 @@ export default function NewPatientPage() {
     dietaryNeeds: "",
     emergencyContactName: "",
     emergencyContactPhone: "05321234567",
-    emergencyContactRelation: "Aile",
+    emergencyContactRelation: "Family",
     notes: ""
   });
 
   const mutation = useMutation({
-    mutationFn: () => patientApi.create({ ...form, tcNumber: form.tcNumber.trim() || undefined }),
+    mutationFn: () =>
+      patientApi.create({
+        ...form,
+        tcNumber: form.tcNumber.trim() || undefined,
+        disabilityType: form.disabilityType || undefined
+      }),
     onSuccess: (patient) => {
-      toast.success("Hasta kaydedildi");
+      toast.success("Resident saved");
       router.push(`/patients/${patient.id}`);
     },
     onError: (error) => toast.error(formatPatientError(error))
@@ -48,52 +54,60 @@ export default function NewPatientPage() {
       className="mx-auto max-w-5xl space-y-5 rounded-3xl border border-border bg-white p-6 shadow-sm"
     >
       <div>
-        <h2 className="text-xl font-bold text-text">Yeni Hasta</h2>
-        <p className="text-sm text-muted">TC kimlik girilirse API tarafında şifreli saklanır.</p>
+        <h2 className="text-xl font-bold text-text">New Resident</h2>
+        <p className="text-sm text-muted">If a national ID is entered, it is stored encrypted by the API.</p>
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         <Input
-          label="Ad"
+          label="First name"
           value={form.firstName}
           onChange={(value) => setForm({ ...form, firstName: value })}
           required
           minLength={2}
           maxLength={50}
           pattern={turkishNamePattern}
-          title="Sadece harf, boşluk, apostrof ve tire kullanın"
+          title="Use only letters, spaces, apostrophes and hyphens"
         />
         <Input
-          label="Soyad"
+          label="Last name"
           value={form.lastName}
           onChange={(value) => setForm({ ...form, lastName: value })}
           required
           minLength={2}
           maxLength={50}
           pattern={turkishNamePattern}
-          title="Sadece harf, boşluk, apostrof ve tire kullanın"
+          title="Use only letters, spaces, apostrophes and hyphens"
         />
         <Input
-          label="Doğum tarihi"
+          label="Date of birth"
           type="date"
           value={form.birthDate}
           onChange={(value) => setForm({ ...form, birthDate: value })}
           required
         />
-        <Select label="Cinsiyet" value={form.gender} onChange={(value) => setForm({ ...form, gender: value })} options={[["MALE", "Erkek"], ["FEMALE", "Kadın"]]} />
+        <Select label="Gender" value={form.gender} onChange={(value) => setForm({ ...form, gender: value })} options={[["MALE", "Male"], ["FEMALE", "Female"]]} />
         <Input
-          label="TC Kimlik"
+          label="National ID"
           value={form.tcNumber}
           onChange={(value) => setForm({ ...form, tcNumber: value })}
           inputMode="numeric"
           maxLength={11}
           pattern="[0-9]{11}"
-          title="TC kimlik 11 rakam olmalıdır"
+          title="National ID must be 11 digits"
         />
-        <Input label="Oda" value={form.roomNumber} onChange={(value) => setForm({ ...form, roomNumber: value })} maxLength={20} />
-        <Select label="Bakım türü" value={form.careType} onChange={(value) => setForm({ ...form, careType: value })} options={[["ELDERLY", "Yaşlı"], ["DISABLED", "Engelli"], ["BOTH", "Her İkisi"]]} />
-        <Select label="Hareketlilik" value={form.mobilityLevel} onChange={(value) => setForm({ ...form, mobilityLevel: value })} options={[["INDEPENDENT", "Bağımsız"], ["ASSISTED", "Yardımlı"], ["BEDRIDDEN", "Yatağa bağımlı"]]} />
+        <Input label="Room" value={form.roomNumber} onChange={(value) => setForm({ ...form, roomNumber: value })} maxLength={20} />
+        <Select label="Care type" value={form.careType} onChange={(value) => setForm({ ...form, careType: value })} options={[["ELDERLY", "Elderly"], ["DISABLED", "Physically Disabled"], ["BOTH", "Both"]]} />
+        {form.careType === "DISABLED" || form.careType === "BOTH" ? (
+          <Select
+            label="Disability type"
+            value={form.disabilityType}
+            onChange={(value) => setForm({ ...form, disabilityType: value })}
+            options={[["", "Not specified"], ["PHYSICAL", "Physical"], ["MENTAL", "Mental"], ["BOTH", "Both"]]}
+          />
+        ) : null}
+        <Select label="Mobility" value={form.mobilityLevel} onChange={(value) => setForm({ ...form, mobilityLevel: value })} options={[["INDEPENDENT", "Independent"], ["ASSISTED", "Assisted"], ["BEDRIDDEN", "Bedridden"]]} />
         <Input
-          label="Acil kişi"
+          label="Emergency contact"
           value={form.emergencyContactName}
           onChange={(value) => setForm({ ...form, emergencyContactName: value })}
           required
@@ -101,24 +115,24 @@ export default function NewPatientPage() {
           maxLength={100}
         />
         <Input
-          label="Acil telefon"
+          label="Emergency phone"
           value={form.emergencyContactPhone}
           onChange={(value) => setForm({ ...form, emergencyContactPhone: value })}
           required
           inputMode="tel"
           pattern="(\\+90|0)?[1-9][0-9]{9}"
-          title="Telefonu 05321234567, 5321234567 veya +905321234567 formatında girin"
+          title="Enter the phone as 05321234567, 5321234567 or +905321234567"
         />
       </div>
-      <Input label="Alerjiler" value={form.allergies} onChange={(value) => setForm({ ...form, allergies: value })} maxLength={5000} />
+      <Input label="Allergies" value={form.allergies} onChange={(value) => setForm({ ...form, allergies: value })} maxLength={5000} />
       <Input
-        label="Süregelen ilaçlar"
+        label="Current medications"
         value={form.currentMedications}
         onChange={(value) => setForm({ ...form, currentMedications: value })}
         maxLength={5000}
       />
       <button className="rounded-xl bg-primary px-6 py-3 font-semibold text-white disabled:opacity-60" disabled={mutation.isPending}>
-        Kaydet
+        Save
       </button>
     </form>
   );
@@ -127,21 +141,21 @@ export default function NewPatientPage() {
 const turkishNamePattern = "[a-zA-ZçğıöşüÇĞİÖŞÜ\\s'-]+";
 
 const fieldLabels: Record<string, string> = {
-  firstName: "Ad",
-  lastName: "Soyad",
-  birthDate: "Doğum tarihi",
-  gender: "Cinsiyet",
-  tcNumber: "TC Kimlik",
-  careType: "Bakım türü",
-  roomNumber: "Oda",
-  admissionDate: "Kabul tarihi",
-  status: "Durum",
-  mobilityLevel: "Hareketlilik",
-  emergencyContactName: "Acil kişi",
-  emergencyContactPhone: "Acil telefon",
-  emergencyContactRelation: "Yakınlık",
-  allergies: "Alerjiler",
-  currentMedications: "Süregelen ilaçlar"
+  firstName: "First name",
+  lastName: "Last name",
+  birthDate: "Date of birth",
+  gender: "Gender",
+  tcNumber: "National ID",
+  careType: "Care type",
+  roomNumber: "Room",
+  admissionDate: "Admission date",
+  status: "Status",
+  mobilityLevel: "Mobility",
+  emergencyContactName: "Emergency contact",
+  emergencyContactPhone: "Emergency phone",
+  emergencyContactRelation: "Relationship",
+  allergies: "Allergies",
+  currentMedications: "Current medications"
 };
 
 function formatPatientError(error: unknown): string {
@@ -150,8 +164,8 @@ function formatPatientError(error: unknown): string {
     if (!firstDetail) {
       return error.message;
     }
-    const label = firstDetail.field ? fieldLabels[firstDetail.field] ?? firstDetail.field : "Alan";
-    const message = firstDetail.message === "Invalid" ? "geçerli değil" : firstDetail.message;
+    const label = firstDetail.field ? fieldLabels[firstDetail.field] ?? firstDetail.field : "Field";
+    const message = firstDetail.message === "Invalid" ? "is not valid" : firstDetail.message;
     return `${label}: ${message}`;
   }
 
@@ -159,7 +173,7 @@ function formatPatientError(error: unknown): string {
     return error.message;
   }
 
-  return "Hasta kaydedilemedi";
+  return "Could not save resident";
 }
 
 function Input({

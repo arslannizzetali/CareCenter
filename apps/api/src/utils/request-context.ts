@@ -35,7 +35,7 @@ export function requester(req: Request): Requester {
 export function routeId(req: Request): string {
   const id = req.params.id;
   if (!id) {
-    throw new BadRequestError("MISSING_ROUTE_ID", "Geçersiz istek");
+    throw new BadRequestError("MISSING_ROUTE_ID", "Invalid request");
   }
   return id;
 }
